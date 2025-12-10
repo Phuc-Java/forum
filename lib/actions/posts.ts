@@ -2,6 +2,10 @@
 
 import { Client, Databases, ID, Query } from "node-appwrite";
 import { APPWRITE_CONFIG } from "../appwrite/config";
+import {
+  createNewPostNotifications,
+  createNotification,
+} from "./notifications";
 
 /**
  * Create post (Server Action) - Requires auth
@@ -40,6 +44,14 @@ export async function createPost(formData: FormData) {
       }
     );
 
+    // Create notifications for all users about new post (async, don't await)
+    createNewPostNotifications({
+      postId: post.$id,
+      postTitle: title.trim(),
+      authorId,
+      authorName,
+    }).catch(console.error);
+
     return { success: true, post };
   } catch (error) {
     console.error("createPost error:", error);
@@ -52,7 +64,11 @@ export async function createPost(formData: FormData) {
 /**
  * Toggle like on a post
  */
-export async function toggleLike(postId: string, userId: string) {
+export async function toggleLike(
+  postId: string,
+  userId: string,
+  userName?: string
+) {
   try {
     const client = new Client()
       .setEndpoint(APPWRITE_CONFIG.endpoint)
@@ -81,6 +97,18 @@ export async function toggleLike(postId: string, userId: string) {
       postId,
       { likes: newLikes }
     );
+
+    // Send notification when someone likes (not unlikes) and not self-like
+    if (!hasLiked && post.authorId !== userId && userName) {
+      createNotification({
+        userId: post.authorId as string,
+        type: "like",
+        fromUserId: userId,
+        fromUserName: userName,
+        postId,
+        postTitle: post.title as string,
+      }).catch(console.error);
+    }
 
     return { success: true, liked: !hasLiked, likesCount: newLikes.length };
   } catch (error) {
@@ -124,13 +152,17 @@ export async function createComment(
       }
     );
 
-    // Update commentsCount on the post
+    // Update commentsCount on the post and get post info for notification
+    let postAuthorId: string | null = null;
+    let postTitle: string = "";
     try {
       const post = await databases.getDocument(
         APPWRITE_CONFIG.databaseId,
         APPWRITE_CONFIG.collections.posts,
         postId
       );
+      postAuthorId = post.authorId as string;
+      postTitle = post.title as string;
       const currentCount = (post.commentsCount as number) || 0;
       await databases.updateDocument(
         APPWRITE_CONFIG.databaseId,
@@ -141,6 +173,19 @@ export async function createComment(
     } catch (updateError) {
       console.error("Failed to update commentsCount:", updateError);
       // Don't fail the whole operation if count update fails
+    }
+
+    // Notify post author about the comment (async, don't block response)
+    if (postAuthorId && postAuthorId !== authorId) {
+      createNotification({
+        userId: postAuthorId,
+        type: "comment",
+        fromUserId: authorId,
+        fromUserName: authorName,
+        postId,
+        postTitle,
+        commentContent: content.trim(),
+      }).catch(console.error);
     }
 
     return { success: true, comment };

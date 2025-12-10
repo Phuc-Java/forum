@@ -6,6 +6,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { getCurrentUser, logout } from "@/lib/appwrite/client";
 import { getProfileByUserId, type Profile } from "@/lib/actions/profile";
+import NotificationBell from "@/components/ui/NotificationBell";
 
 interface User {
   $id: string;
@@ -139,6 +140,9 @@ export default function Navbar() {
               </div>
             ) : user ? (
               <>
+                {/* Notification Bell */}
+                <NotificationBell userId={user.$id} />
+
                 {/* User Info with Dropdown */}
                 <div className="relative">
                   <button

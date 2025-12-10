@@ -160,7 +160,8 @@ export default function PostCard({
     }
 
     setLikeLoading(true);
-    const result = await toggleLike(post.$id, user.$id);
+    const userName = authorProfile?.displayName || user.name || "Ẩn danh";
+    const result = await toggleLike(post.$id, user.$id, userName);
 
     if (result.success) {
       setIsLiked(result.liked!);

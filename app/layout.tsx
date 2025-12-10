@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import localFont from "next/font/local";
 import "./globals.css";
 import { Navbar } from "@/components";
+import ClientMusicPlayer from "@/components/ui/ClientMusicPlayer";
 
 // Be Vietnam Pro - Sans-serif tiếng Việt cho body text
 const beVietnamPro = localFont({
@@ -90,6 +91,7 @@ export default function RootLayout({
       >
         <Navbar />
         {children}
+        <ClientMusicPlayer />
       </body>
     </html>
   );

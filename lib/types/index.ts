@@ -58,3 +58,19 @@ export interface UserStats {
   postsCount: number;
   commentsCount: number;
 }
+
+// ============ NOTIFICATION TYPES ============
+export type NotificationType = "comment" | "new_post" | "like";
+
+export interface Notification {
+  $id: string;
+  $createdAt: string;
+  userId: string;
+  type: NotificationType;
+  fromUserId: string;
+  fromUserName: string;
+  postId: string;
+  postTitle: string;
+  commentContent?: string | null;
+  isRead: boolean;
+}

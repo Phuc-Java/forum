@@ -7,6 +7,7 @@ export const APPWRITE_CONFIG = {
     posts: "posts",
     comments: "comments",
     profiles: "profiles",
+    notifications: "notifications",
   },
 } as const;
 

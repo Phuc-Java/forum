@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" id="headphone">
+  <g color="#000" transform="translate(1115.582 -1394.237)">
+    <rect width="2" height="4" x="-1101.323" y="1403.328" fill="#ff5a67" overflow="visible" ry="1" style="isolation:auto;mix-blend-mode:normal"></rect>
+    <rect width="2" height="4" x="-1114.076" y="1403.078" fill="#00d1b6" overflow="visible" ry="1" style="isolation:auto;mix-blend-mode:normal"></rect>
+    <path fill="none" stroke="#373449" stroke-linecap="round" stroke-linejoin="round" d="M-1111.072 1404.24v-1.612c.043-2.43 2.041-4.388 4.5-4.388 2.425 0 4.402 1.905 4.496 4.29v1.71" overflow="visible" style="isolation:auto;mix-blend-mode:normal"></path>
+    <rect width="2" height="4" x="-1113.073" y="1402.74" fill="none" stroke="#373449" stroke-linecap="round" stroke-linejoin="round" overflow="visible" ry="1" style="isolation:auto;mix-blend-mode:normal"></rect>
+    <rect width="2" height="4" x="-1102.073" y="1402.74" fill="none" stroke="#373449" stroke-linecap="round" stroke-linejoin="round" overflow="visible" ry="1" style="isolation:auto;mix-blend-mode:normal"></rect>
+  </g>
+</svg>
