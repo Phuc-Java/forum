@@ -28,8 +28,10 @@
   --color-surface-elevated: var(--surface-elevated);
   --color-border: var(--border);
 
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  /* Font variables - Local fonts */
+  --font-sans: var(--font-sans);
+  --font-mono: var(--font-mono);
+  --font-serif: var(--font-serif);
 
   /* Custom spacing for cyberpunk aesthetics */
   --spacing-glow: 0.5rem;
@@ -38,8 +40,21 @@
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: var(--font-geist-sans), "Courier New", monospace;
+  font-family: var(--font-sans), "Be Vietnam Pro", system-ui, sans-serif;
   min-height: 100vh;
+}
+
+/* Typography Classes */
+.font-sans {
+  font-family: var(--font-sans), "Be Vietnam Pro", system-ui, sans-serif;
+}
+
+.font-mono {
+  font-family: var(--font-mono), "Xanh Mono", "Courier New", monospace;
+}
+
+.font-serif {
+  font-family: var(--font-serif), "Playfair Display", Georgia, serif;
 }
 
 /* Cyberpunk glow effects */
@@ -99,4 +114,29 @@ body {
 
 ::-webkit-scrollbar-thumb:hover {
   background: var(--secondary);
+}
+
+/* Shimmer animation for buttons */
+@keyframes shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+/* Glow text animation */
+@keyframes glow-pulse {
+  0%,
+  100% {
+    filter: brightness(1);
+  }
+  50% {
+    filter: brightness(1.2);
+  }
+}
+
+.animate-glow-pulse {
+  animation: glow-pulse 2s ease-in-out infinite;
 }
