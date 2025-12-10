@@ -1,64 +1,187 @@
-import Image from "next/image";
+"use client";
+
+import { useEffect, useState } from "react";
+import { ID, Query } from "appwrite";
+import Navbar from "@/components/Navbar";
+import CreatePostForm from "@/components/CreatePostForm";
+import PostCard from "@/components/PostCard";
+import { databases, DATABASE_ID, COLLECTION_ID } from "@/lib/appwrite";
+
+interface Post {
+  $id: string;
+  title: string;
+  content: string;
+  $createdAt: string;
+}
 
 export default function Home() {
+  const [posts, setPosts] = useState<Post[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  // Fetch posts from Appwrite
+  const fetchPosts = async () => {
+    try {
+      setIsLoading(true);
+      setError(null);
+
+      const response = await databases.listDocuments(
+        DATABASE_ID,
+        COLLECTION_ID,
+        [Query.orderDesc("$createdAt"), Query.limit(50)]
+      );
+
+      setPosts(response.documents as unknown as Post[]);
+    } catch (err) {
+      console.error("❌ Error fetching posts:", err);
+      setError(
+        "Failed to load transmissions. Please check your Appwrite configuration."
+      );
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Create a new post
+  const handleCreatePost = async (postData: {
+    title: string;
+    content: string;
+  }) => {
+    try {
+      const newPost = await databases.createDocument(
+        DATABASE_ID,
+        COLLECTION_ID,
+        ID.unique(),
+        {
+          title: postData.title,
+          content: postData.content,
+        }
+      );
+
+      // Prepend new post to the list for instant feedback
+      setPosts([newPost as unknown as Post, ...posts]);
+
+      console.log("✅ Post broadcasted successfully!");
+    } catch (err) {
+      console.error("❌ Error creating post:", err);
+      throw err; // Re-throw to let the form handle the error
+    }
+  };
+
+  // Fetch posts on component mount
+  useEffect(() => {
+    fetchPosts();
+  }, []);
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
+    <div className="min-h-screen bg-background">
+      <Navbar />
+
+      <main className="max-w-5xl mx-auto px-4 py-8 space-y-8">
+        {/* Hero Section */}
+        <div className="text-center py-12 space-y-4">
+          <h1 className="text-5xl font-bold font-mono">
+            <span className="text-primary text-glow-primary">{">"} </span>
+            <span className="text-foreground">Welcome to the </span>
+            <span className="text-secondary text-glow-secondary">Network</span>
           </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
+          <p className="text-foreground/60 font-mono max-w-2xl mx-auto">
+            A decentralized communication hub for hackers, makers, and digital
+            nomads. Broadcast your thoughts securely to the network.
           </p>
+          <div className="flex items-center justify-center gap-2 text-xs text-accent font-mono">
+            <div className="w-2 h-2 bg-primary rounded-full animate-pulse"></div>
+            <span>ENCRYPTED • ANONYMOUS • DECENTRALIZED</span>
+          </div>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+
+        {/* Create Post Form */}
+        <CreatePostForm onPostCreated={handleCreatePost} />
+
+        {/* Posts Section */}
+        <div className="space-y-4">
+          <div className="flex items-center gap-3 mb-6">
+            <div className="h-0.5 flex-1 bg-linear-to-r from-transparent via-primary to-transparent"></div>
+            <h2 className="text-2xl font-bold font-mono text-accent">
+              {">"} Recent Transmissions
+              {!isLoading && posts.length > 0 && (
+                <span className="text-sm text-foreground/40 ml-2">
+                  ({posts.length})
+                </span>
+              )}
+            </h2>
+            <div className="h-0.5 flex-1 bg-linear-to-r from-transparent via-secondary to-transparent"></div>
+          </div>
+
+          {/* Error State */}
+          {error && (
+            <div className="bg-danger/10 border-2 border-danger rounded-lg p-6 text-center">
+              <p className="text-danger font-mono text-lg mb-2">
+                ⚠️ CONNECTION ERROR
+              </p>
+              <p className="text-foreground/60 text-sm font-mono mb-4">
+                {error}
+              </p>
+              <button
+                onClick={fetchPosts}
+                className="px-6 py-2 bg-danger text-background font-mono font-bold rounded hover:bg-danger/80 transition-colors"
+              >
+                {">"} Retry Connection
+              </button>
+            </div>
+          )}
+
+          {/* Loading State */}
+          {isLoading && !error && (
+            <div className="space-y-6">
+              {[1, 2, 3].map((i) => (
+                <div
+                  key={i}
+                  className="bg-surface/40 backdrop-blur-md border border-border rounded-lg p-6 animate-pulse"
+                >
+                  <div className="h-6 bg-foreground/10 rounded w-3/4 mb-4"></div>
+                  <div className="h-4 bg-foreground/10 rounded w-full mb-2"></div>
+                  <div className="h-4 bg-foreground/10 rounded w-5/6"></div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Posts List */}
+          {!isLoading && !error && posts.length > 0 && (
+            <div className="space-y-6">
+              {posts.map((post) => (
+                <PostCard
+                  key={post.$id}
+                  title={post.title}
+                  content={post.content}
+                  createdAt={post.$createdAt}
+                />
+              ))}
+            </div>
+          )}
+
+          {/* Empty State */}
+          {!isLoading && !error && posts.length === 0 && (
+            <div className="bg-surface/40 backdrop-blur-md border border-border rounded-lg p-12 text-center">
+              <div className="text-6xl mb-4">📡</div>
+              <h3 className="text-2xl font-bold text-primary font-mono mb-2">
+                No Transmissions Found
+              </h3>
+              <p className="text-foreground/60 font-mono">
+                Be the first to broadcast a message to the network!
+              </p>
+            </div>
+          )}
         </div>
+
+        {/* Footer */}
+        <footer className="text-center py-8 text-foreground/40 font-mono text-sm border-t border-border/50">
+          <p>© 2025 HackerForum • Powered by Next.js 16 & Appwrite</p>
+          <p className="text-xs mt-2 text-accent">
+            Stay Anonymous • Stay Secure • Stay Connected
+          </p>
+        </footer>
       </main>
     </div>
   );
