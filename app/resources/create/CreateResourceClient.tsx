@@ -36,6 +36,7 @@ export default function CreateResourceClient({
 
   // User data now comes from server - no loading state needed
   const [uploadingFile, setUploadingFile] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(""); // Upload status message
   const [title, setTitle] = useState("");
   const [category, setCategory] = useState<ResourceCategoryId>(initialCategory);
   const [tags, setTags] = useState("");
@@ -123,7 +124,116 @@ export default function CreateResourceClient({
     );
   };
 
-  // Handle paste image
+  // Compress image before upload (reduces upload time significantly)
+  const compressImageForUpload = async (
+    file: File,
+    maxWidth: number = 1920,
+    quality: number = 0.85
+  ): Promise<File> => {
+    // Skip compression for small images or non-image files
+    if (!file.type.startsWith("image/") || file.size < 100 * 1024) {
+      return file;
+    }
+
+    return new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement("canvas");
+          let width = img.width;
+          let height = img.height;
+
+          // Scale down if larger than maxWidth
+          if (width > maxWidth) {
+            height = (height * maxWidth) / width;
+            width = maxWidth;
+          }
+
+          canvas.width = width;
+          canvas.height = height;
+
+          const ctx = canvas.getContext("2d");
+          if (!ctx) {
+            resolve(file); // Fallback to original
+            return;
+          }
+
+          ctx.drawImage(img, 0, 0, width, height);
+
+          // Convert to WebP for better compression (25-35% smaller)
+          canvas.toBlob(
+            (blob) => {
+              if (blob && blob.size < file.size) {
+                const compressedFile = new File(
+                  [blob],
+                  file.name.replace(/\.[^.]+$/, ".webp"),
+                  { type: "image/webp" }
+                );
+                console.log(
+                  `📦 Compressed: ${(file.size / 1024).toFixed(0)}KB → ${(
+                    blob.size / 1024
+                  ).toFixed(0)}KB`
+                );
+                resolve(compressedFile);
+              } else {
+                resolve(file); // Use original if compression didn't help
+              }
+            },
+            "image/webp",
+            quality
+          );
+        };
+        img.onerror = () => resolve(file);
+        img.src = e.target?.result as string;
+      };
+      reader.onerror = () => resolve(file);
+      reader.readAsDataURL(file);
+    });
+  };
+
+  // Helper: Upload file to Appwrite Storage via API
+  const uploadToStorage = async (
+    file: File,
+    type: "image" | "file" | "thumbnail"
+  ): Promise<{
+    success: boolean;
+    viewUrl?: string;
+    downloadUrl?: string;
+    error?: string;
+  }> => {
+    try {
+      // Compress images before upload (except attachments)
+      let fileToUpload = file;
+      if (type !== "file" && file.type.startsWith("image/")) {
+        setUploadProgress("Đang nén ảnh...");
+        fileToUpload = await compressImageForUpload(file);
+      }
+
+      setUploadProgress(
+        `Đang tải lên (${(fileToUpload.size / 1024).toFixed(0)}KB)...`
+      );
+
+      const formData = new FormData();
+      formData.append("file", fileToUpload);
+      formData.append("type", type);
+
+      const response = await fetch("/api/storage/upload", {
+        method: "POST",
+        body: formData,
+      });
+
+      const result = await response.json();
+      setUploadProgress("");
+      return result;
+    } catch (error) {
+      console.error("Upload error:", error);
+      setUploadProgress("");
+      return { success: false, error: "Upload failed" };
+    }
+  };
+
+  // Handle paste image - Upload to Storage
   const handlePaste = async (e: React.ClipboardEvent) => {
     const items = e.clipboardData?.items;
     if (!items) return;
@@ -133,50 +243,47 @@ export default function CreateResourceClient({
         e.preventDefault();
         const file = item.getAsFile();
         if (file) {
-          // Convert to base64 for now (in production, upload to storage)
-          const reader = new FileReader();
-          reader.onload = (event) => {
-            const base64 = event.target?.result as string;
-            // Insert image with float left (wrap text)
+          setUploadingFile(true);
+          const result = await uploadToStorage(file, "image");
+          if (result.success && result.viewUrl) {
+            // Insert image with storage URL + lazy loading for performance
             contentRef.current?.focus();
-            const imageHtml = `<img src="${base64}" alt="${file.name}" style="float: left; max-width: 50%; height: auto; margin: 0 16px 16px 0; border-radius: 8px;" />`;
+            const imageHtml = `<img src="${result.viewUrl}" alt="${file.name}" loading="lazy" decoding="async" style="float: left; max-width: 50%; height: auto; margin: 0 16px 16px 0; border-radius: 8px;" />`;
             document.execCommand("insertHTML", false, imageHtml);
-          };
-          reader.readAsDataURL(file);
+          } else {
+            setError(result.error || "Không thể tải ảnh lên");
+          }
+          setUploadingFile(false);
         }
       }
     }
   };
 
-  // Handle image file selection
-  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+  // Handle image file selection - Upload to Storage
+  const handleImageSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files || files.length === 0) return;
 
     setUploadingFile(true);
     const file = files[0];
 
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      const base64 = event.target?.result as string;
-      // Insert image with float left (wrap text) by default
+    const result = await uploadToStorage(file, "image");
+    if (result.success && result.viewUrl) {
+      // Insert image with storage URL + lazy loading for performance
       contentRef.current?.focus();
-      const imageHtml = `<img src="${base64}" alt="${file.name}" style="float: left; max-width: 50%; height: auto; margin: 0 16px 16px 0; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.3);" />`;
+      const imageHtml = `<img src="${result.viewUrl}" alt="${file.name}" loading="lazy" decoding="async" style="float: left; max-width: 50%; height: auto; margin: 0 16px 16px 0; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.3);" />`;
       document.execCommand("insertHTML", false, imageHtml);
-      setUploadingFile(false);
-    };
-    reader.onerror = () => {
-      setError("Không thể đọc file ảnh");
-      setUploadingFile(false);
-    };
-    reader.readAsDataURL(file);
+    } else {
+      setError(result.error || "Không thể tải ảnh lên");
+    }
+    setUploadingFile(false);
 
     // Reset input
     e.target.value = "";
   };
 
-  // Handle file selection (for download)
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+  // Handle file selection (for download) - Upload to Storage
+  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files || files.length === 0) return;
 
@@ -187,20 +294,16 @@ export default function CreateResourceClient({
     const fileIcon = getFileIcon(fileName);
     const ext = fileName.split(".").pop()?.toUpperCase() || "FILE";
 
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      const base64 = event.target?.result as string;
-      // Insert compact download button into editor
+    const result = await uploadToStorage(file, "file");
+    if (result.success && result.downloadUrl) {
+      // Insert download button with storage URL
       contentRef.current?.focus();
-      const downloadHtml = `<a href="${base64}" download="${fileName}" class="inline-flex items-center gap-2 px-3 py-2 my-1 bg-surface border border-border rounded-lg hover:border-primary/50 hover:bg-primary/5 transition-all group" contenteditable="false"><span class="text-lg">${fileIcon}</span><span class="font-mono text-sm text-foreground/80 group-hover:text-primary">${fileName}</span><span class="text-xs text-foreground/40 px-1.5 py-0.5 bg-background rounded">${ext}</span><span class="text-xs text-foreground/50">${fileSize}</span></a>&nbsp;`;
+      const downloadHtml = `<a href="${result.downloadUrl}" download="${fileName}" class="inline-flex items-center gap-2 px-3 py-2 my-1 bg-surface border border-border rounded-lg hover:border-primary/50 hover:bg-primary/5 transition-all group" contenteditable="false" target="_blank" rel="noopener noreferrer"><span class="text-lg">${fileIcon}</span><span class="font-mono text-sm text-foreground/80 group-hover:text-primary">${fileName}</span><span class="text-xs text-foreground/40 px-1.5 py-0.5 bg-background rounded">${ext}</span><span class="text-xs text-foreground/50">${fileSize}</span></a>&nbsp;`;
       document.execCommand("insertHTML", false, downloadHtml);
-      setUploadingFile(false);
-    };
-    reader.onerror = () => {
-      setError("Không thể đọc file");
-      setUploadingFile(false);
-    };
-    reader.readAsDataURL(file);
+    } else {
+      setError(result.error || "Không thể tải file lên");
+    }
+    setUploadingFile(false);
 
     // Reset input
     e.target.value = "";
@@ -250,7 +353,20 @@ export default function CreateResourceClient({
     });
   };
 
-  // Handle thumbnail selection - with compression
+  // Convert compressed base64 to File for upload
+  const base64ToFile = (base64: string, filename: string): File => {
+    const arr = base64.split(",");
+    const mime = arr[0].match(/:(.*?);/)?.[1] || "image/jpeg";
+    const bstr = atob(arr[1]);
+    let n = bstr.length;
+    const u8arr = new Uint8Array(n);
+    while (n--) {
+      u8arr[n] = bstr.charCodeAt(n);
+    }
+    return new File([u8arr], filename, { type: mime });
+  };
+
+  // Handle thumbnail selection - upload to Storage
   const handleThumbnailSelect = async (
     e: React.ChangeEvent<HTMLInputElement>
   ) => {
@@ -266,25 +382,28 @@ export default function CreateResourceClient({
     }
 
     try {
-      // Compress thumbnail to reduce size (max 800px width, 80% quality for better quality)
+      setUploadingFile(true);
+      // Compress thumbnail to reduce size before upload
       const compressed = await compressImage(file, 800, 0.8);
 
-      // Check if still too large (max 900KB for 1MB limit in Appwrite)
-      if (compressed.length > 900000) {
-        // Try more aggressive compression
-        const moreCompressed = await compressImage(file, 600, 0.6);
-        if (moreCompressed.length > 900000) {
-          setError("Ảnh thumbnail quá lớn. Vui lòng chọn ảnh nhỏ hơn (< 1MB)");
-          return;
-        }
-        setThumbnail(moreCompressed);
-        setThumbnailPreview(moreCompressed);
+      // Convert base64 to File for upload
+      const compressedFile = base64ToFile(
+        compressed,
+        `thumbnail_${Date.now()}.jpg`
+      );
+
+      // Upload to Storage
+      const result = await uploadToStorage(compressedFile, "thumbnail");
+      if (result.success && result.viewUrl) {
+        setThumbnail(result.viewUrl);
+        setThumbnailPreview(result.viewUrl);
       } else {
-        setThumbnail(compressed);
-        setThumbnailPreview(compressed);
+        setError(result.error || "Không thể tải thumbnail lên");
       }
     } catch {
       setError("Không thể xử lý ảnh thumbnail");
+    } finally {
+      setUploadingFile(false);
     }
 
     // Reset input
@@ -307,9 +426,9 @@ export default function CreateResourceClient({
       return;
     }
 
-    // Check content length - Appwrite has limit
-    // VPS 180GB: Set 'content' attribute in Appwrite to 200000000 (200 million chars = ~200MB)
-    const MAX_CONTENT_LENGTH = 200000000; // 200 million chars (~200MB) - VPS mạnh
+    // Content length check - now much smaller since files are URLs, not base64
+    // With Storage bucket, content only contains text + image/file URLs (~2KB per file)
+    const MAX_CONTENT_LENGTH = 5000000; // 5MB is more than enough for HTML with URLs
     if (content.length > MAX_CONTENT_LENGTH) {
       setError(
         `Nội dung quá dài (${(content.length / 1000000).toFixed(
@@ -962,9 +1081,17 @@ export default function CreateResourceClient({
               </button>
             </div>
 
-            <p className="text-xs font-mono text-foreground/40 mb-3">
-              💡 Mẹo: Paste hình ảnh trực tiếp (Ctrl+V) hoặc dùng toolbar bên
-              trên để thêm nội dung
+            <p className="text-xs font-mono text-foreground/40 mb-3 flex items-center justify-between">
+              <span>
+                💡 Mẹo: Paste hình ảnh trực tiếp (Ctrl+V) hoặc dùng toolbar bên
+                trên để thêm nội dung
+              </span>
+              {uploadProgress && (
+                <span className="text-primary animate-pulse flex items-center gap-2">
+                  <span className="inline-block w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin"></span>
+                  {uploadProgress}
+                </span>
+              )}
             </p>
             <div
               ref={contentRef}

@@ -3,6 +3,8 @@ export const APPWRITE_CONFIG = {
   endpoint: "https://sgp.cloud.appwrite.io/v1",
   projectId: "6938fff4002177d39dc0",
   databaseId: "6939050d003171236d62",
+  // Storage bucket for file uploads (images, attachments)
+  storageBucketId: "693a642300377e4ba7d8", // Bucket "Kho"
   collections: {
     posts: "posts",
     comments: "comments",
