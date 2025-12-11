@@ -2,6 +2,7 @@ import {
   getPosts,
   getServerUser,
   getServerProfiles,
+  getServerProfile,
   type ServerProfile,
 } from "@/lib/appwrite/server";
 import { PostCard, CreatePostForm } from "@/components";
@@ -24,6 +25,9 @@ export default async function ForumPage() {
   // Server-side data fetching - Tận dụng sức mạnh VPS
   const [posts, user] = await Promise.all([getPosts(), getServerUser()]);
 
+  // Get current user's profile for permissions check
+  const currentUserProfile = user ? await getServerProfile(user.$id) : null;
+
   // Batch fetch all author profiles (SSR)
   const authorIds = posts.map((p) => p.authorId);
   const profiles = await getServerProfiles(authorIds);
@@ -35,41 +39,67 @@ export default async function ForumPage() {
   });
 
   return (
-    <main className="min-h-screen bg-background pt-8 pb-16">
-      <div className="max-w-4xl mx-auto px-4 space-y-8">
-        {/* Header */}
+    <main className="min-h-screen bg-background pt-8 pb-16 relative overflow-hidden">
+      {/* Background Effects */}
+      <div className="fixed inset-0 pointer-events-none">
+        <div className="absolute top-0 left-1/4 w-96 h-96 bg-primary/5 rounded-full blur-3xl"></div>
+        <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-secondary/5 rounded-full blur-3xl"></div>
+      </div>
+
+      <div className="max-w-4xl mx-auto px-4 space-y-8 relative z-10">
+        {/* Header - Enhanced Animation */}
         <div className="text-center py-8 space-y-4">
-          <h1 className="text-4xl md:text-5xl font-bold font-mono">
-            <span className="text-primary text-glow-primary">{">"} </span>
+          <h1 className="text-4xl md:text-5xl font-bold font-mono animate-fade-in-up">
+            <span className="text-primary text-glow-primary animate-glow-pulse">
+              {">"}{" "}
+            </span>
             <span className="text-foreground">Góp </span>
             <span className="text-secondary text-glow-secondary">Ý</span>
           </h1>
-          <p className="text-foreground/60 font-mono max-w-2xl mx-auto">
+          <p
+            className="text-foreground/60 font-mono max-w-2xl mx-auto animate-fade-in-up opacity-0"
+            style={{ animationDelay: "0.1s", animationFillMode: "forwards" }}
+          >
             Nơi chia sẻ những câu chuyện, tâm tư và kết nối với cộng đồng Xóm
             Nhà Lá.
           </p>
-          <div className="flex items-center justify-center gap-2 text-xs text-accent font-mono">
-            <span className="w-2 h-2 bg-primary rounded-full animate-pulse"></span>
+          <div
+            className="flex items-center justify-center gap-2 text-xs text-accent font-mono animate-fade-in-up opacity-0"
+            style={{ animationDelay: "0.2s", animationFillMode: "forwards" }}
+          >
+            <span className="w-2 h-2 bg-primary rounded-full animate-pulse shadow-[0_0_8px_rgba(0,255,159,0.8)]"></span>
             <span>BẢO MẬT • ẨN DANH • AN TOÀN</span>
           </div>
         </div>
 
-        {/* Create Post Form - Pass user from server */}
-        <CreatePostForm serverUser={user} />
+        {/* Create Post Form - Pass user and profile from server */}
+        <div
+          className="animate-fade-in-up opacity-0"
+          style={{ animationDelay: "0.3s", animationFillMode: "forwards" }}
+        >
+          <CreatePostForm
+            serverUser={user}
+            serverProfile={currentUserProfile}
+          />
+        </div>
 
         {/* Posts Section */}
         <div className="space-y-4">
-          <div className="flex items-center gap-3">
+          <div
+            className="flex items-center gap-3 animate-fade-in-up opacity-0"
+            style={{ animationDelay: "0.4s", animationFillMode: "forwards" }}
+          >
             <div className="h-px flex-1 bg-linear-to-r from-transparent via-primary to-transparent"></div>
-            <h2 className="text-xl font-bold font-mono text-accent">
-              {">"} Bài Viết ({posts.length})
+            <h2 className="text-xl font-bold font-mono text-accent flex items-center gap-2">
+              <span className="animate-pulse">{">"}</span> Bài Viết (
+              {posts.length})
             </h2>
             <div className="h-px flex-1 bg-linear-to-r from-transparent via-secondary to-transparent"></div>
           </div>
 
           {posts.length === 0 ? (
-            <div className="text-center py-16 bg-surface/30 rounded-lg border border-border">
-              <div className="text-5xl mb-4">📭</div>
+            <div className="text-center py-16 bg-surface/30 rounded-lg border border-border animate-fade-in-up">
+              <div className="text-5xl mb-4 animate-float">📭</div>
               <p className="text-foreground/60 font-mono">
                 Chưa có bài viết nào
               </p>
@@ -79,13 +109,22 @@ export default async function ForumPage() {
             </div>
           ) : (
             <div className="space-y-4">
-              {posts.map((post) => (
-                <PostCard
+              {posts.map((post, index) => (
+                <div
                   key={post.$id}
-                  post={post}
-                  serverUser={user}
-                  authorProfile={profilesObject[post.authorId] || null}
-                />
+                  className="animate-fade-in-up opacity-0"
+                  style={{
+                    animationDelay: `${0.5 + index * 0.1}s`,
+                    animationFillMode: "forwards",
+                  }}
+                >
+                  <PostCard
+                    post={post}
+                    serverUser={user}
+                    authorProfile={profilesObject[post.authorId] || null}
+                    currentUserProfile={currentUserProfile}
+                  />
+                </div>
               ))}
             </div>
           )}

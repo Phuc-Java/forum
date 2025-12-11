@@ -21,6 +21,7 @@ function getServerClient(): Client {
 }
 
 // Server-side client with session from cookies
+// Supports both session secret and JWT
 async function getServerClientWithSession() {
   const client = new Client()
     .setEndpoint(APPWRITE_CONFIG.endpoint)
@@ -28,12 +29,29 @@ async function getServerClientWithSession() {
 
   // Try to get session from cookies
   const cookieStore = await cookies();
-  const sessionCookie = cookieStore.get(
-    `a_session_${APPWRITE_CONFIG.projectId}`
-  );
+
+  // Try JWT first (for synced sessions)
+  const jwtCookie = cookieStore.get("appwrite-jwt");
+  if (jwtCookie?.value) {
+    console.log("🔑 Using JWT for auth");
+    client.setJWT(jwtCookie.value);
+    return client;
+  }
+
+  // Try session cookie
+  const appwriteSession = cookieStore.get("appwrite-session");
+
+  // Try multiple cookie name patterns
+  const sessionCookie =
+    appwriteSession ||
+    cookieStore.get(`a_session_${APPWRITE_CONFIG.projectId}`) ||
+    cookieStore.get(`a_session_${APPWRITE_CONFIG.projectId}_legacy`);
 
   if (sessionCookie?.value) {
+    console.log("✅ Using session cookie for auth");
     client.setSession(sessionCookie.value);
+  } else {
+    console.log("⚠️ No valid session/JWT cookie found");
   }
 
   return client;
@@ -80,6 +98,10 @@ export interface ServerProfile {
   website?: string;
   skills?: string;
   socialLinks?: string;
+  // Role system fields
+  role?: string;
+  customTags?: string;
+  permissions?: string;
 }
 
 /**
@@ -89,7 +111,8 @@ export async function getServerProfile(
   userId: string
 ): Promise<ServerProfile | null> {
   try {
-    const client = getServerClient();
+    // Use session client to have proper read permissions
+    const client = await getServerClientWithSession();
     const databases = new Databases(client);
 
     const response = await databases.listDocuments(

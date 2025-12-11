@@ -22,6 +22,10 @@ export interface Profile {
   website?: string | null;
   socialLinks?: string | null;
   skills?: string | null;
+  // Role system fields
+  role?: string | null;
+  customTags?: string | null;
+  permissions?: string | null;
 }
 
 export interface SocialLinks {
@@ -60,7 +64,7 @@ export interface UserStats {
 }
 
 // ============ NOTIFICATION TYPES ============
-export type NotificationType = "comment" | "new_post" | "like";
+export type NotificationType = "comment" | "new_post" | "like" | "new_resource";
 
 export interface Notification {
   $id: string;

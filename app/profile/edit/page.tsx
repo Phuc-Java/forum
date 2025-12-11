@@ -12,7 +12,7 @@ import {
   type ProfileData,
 } from "@/lib/appwrite/client";
 import { type SocialLinks } from "@/lib/actions/profile";
-import { DEFAULT_AVATARS } from "@/lib/appwrite/config";
+import { AVATAR_CATEGORIES, type AvatarCategory } from "@/lib/appwrite/config";
 
 export default function EditProfilePage() {
   const router = useRouter();
@@ -35,6 +35,8 @@ export default function EditProfilePage() {
   const [skills, setSkills] = useState("");
   const [avatarUrl, setAvatarUrl] = useState("default.jpg");
   const [showAvatarPicker, setShowAvatarPicker] = useState(false);
+  const [activeCategory, setActiveCategory] = useState<AvatarCategory>("cute");
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
 
   // Social links
   const [github, setGithub] = useState("");
@@ -66,6 +68,12 @@ export default function EditProfilePage() {
       }
 
       if (existingProfile) {
+        // Check if user is guest (no_le role) - block editing
+        if (existingProfile.role === "no_le") {
+          router.push(`/profile/${currentUser.$id}`);
+          return;
+        }
+
         setProfile(existingProfile);
         // Use displayName from profile, fallback to user name
         setDisplayName(existingProfile.displayName || currentUser.name || "");
@@ -148,13 +156,23 @@ export default function EditProfilePage() {
   }
 
   return (
-    <div className="min-h-screen bg-background py-8 px-4">
-      <div className="max-w-2xl mx-auto">
+    <div className="min-h-screen bg-background py-8 px-4 relative overflow-hidden">
+      {/* Background effects */}
+      <div className="fixed inset-0 pointer-events-none">
+        <div className="absolute top-20 left-10 w-80 h-80 bg-primary/5 rounded-full blur-3xl animate-float"></div>
+        <div
+          className="absolute bottom-20 right-10 w-80 h-80 bg-secondary/5 rounded-full blur-3xl animate-float"
+          style={{ animationDelay: "-2s" }}
+        ></div>
+      </div>
+
+      <div className="max-w-2xl mx-auto relative z-10">
         {/* Header */}
-        <div className="flex items-center justify-between mb-8">
+        <div className="flex items-center justify-between mb-8 animate-fade-in">
           <div>
             <h1 className="text-2xl font-bold font-mono text-foreground">
-              <span className="text-primary">Chỉnh sửa</span> Profile
+              <span className="text-primary animate-glow-pulse">Chỉnh sửa</span>{" "}
+              Profile
             </h1>
             <p className="text-sm font-mono text-foreground/60 mt-1">
               Cập nhật thông tin cá nhân của bạn
@@ -162,7 +180,7 @@ export default function EditProfilePage() {
           </div>
           <Link
             href={`/profile/${user?.$id}`}
-            className="flex items-center gap-2 px-4 py-2 bg-surface border border-border rounded-lg hover:border-primary/50 transition-colors font-mono text-sm"
+            className="flex items-center gap-2 px-4 py-2 bg-surface border border-border rounded-lg hover:border-primary/50 hover:shadow-[0_0_15px_rgba(0,255,159,0.2)] hover:scale-105 transition-all duration-300 font-mono text-sm btn-press"
           >
             <svg
               className="w-4 h-4"
@@ -189,106 +207,208 @@ export default function EditProfilePage() {
 
         {/* Alerts */}
         {error && (
-          <div className="mb-6 p-4 bg-danger/10 border border-danger/30 rounded-lg">
+          <div className="mb-6 p-4 bg-danger/10 border border-danger/30 rounded-lg animate-shake">
             <p className="text-danger font-mono text-sm">{error}</p>
           </div>
         )}
         {success && (
-          <div className="mb-6 p-4 bg-primary/10 border border-primary/30 rounded-lg">
+          <div className="mb-6 p-4 bg-primary/10 border border-primary/30 rounded-lg animate-fade-in-scale">
             <p className="text-primary font-mono text-sm">{success}</p>
           </div>
         )}
 
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Avatar Section */}
-          <div className="bg-surface/60 backdrop-blur-md border border-border rounded-xl p-6">
-            <h2 className="text-lg font-bold font-mono text-primary mb-4">
+          <div
+            className="bg-surface/60 backdrop-blur-md border border-border rounded-xl p-6 animate-fade-in-up card-hover"
+            style={{ animationDelay: "100ms" }}
+          >
+            <h2 className="text-lg font-bold font-mono text-primary mb-4 flex items-center gap-2">
+              <span className="text-2xl animate-float">🎨</span>
               Ảnh đại diện
             </h2>
 
             <div className="flex items-center gap-6">
-              {/* Current Avatar */}
-              <div className="relative">
-                <div className="w-24 h-24 rounded-full border-4 border-primary/50 overflow-hidden bg-surface shadow-[0_0_20px_rgba(0,255,159,0.2)]">
+              {/* Current Avatar with glow effect */}
+              <div className="relative group">
+                <div className="absolute -inset-1 bg-gradient-to-r from-primary via-accent to-primary rounded-full opacity-50 blur-md group-hover:opacity-75 transition-opacity animate-glow-pulse"></div>
+                <div className="relative w-28 h-28 rounded-full border-4 border-primary/50 overflow-hidden bg-surface shadow-[0_0_30px_rgba(0,255,159,0.3)] group-hover:shadow-[0_0_50px_rgba(0,255,159,0.5)] transition-all duration-500">
                   <Image
-                    src={`/avatars/${avatarUrl}`}
+                    src={`/avatars/${avatarPreview || avatarUrl}`}
                     alt="Avatar"
-                    width={96}
-                    height={96}
-                    className="w-full h-full object-cover"
+                    width={112}
+                    height={112}
+                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
                   />
                 </div>
+                {avatarPreview && avatarPreview !== avatarUrl && (
+                  <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-accent rounded-full flex items-center justify-center border-2 border-background animate-bounce">
+                    <span className="text-xs">✨</span>
+                  </div>
+                )}
               </div>
 
               {/* Change Avatar Button */}
-              <div className="flex-1">
+              <div className="flex-1 space-y-3">
                 <button
                   type="button"
-                  onClick={() => setShowAvatarPicker(!showAvatarPicker)}
-                  className="px-4 py-2 bg-primary/10 border border-primary/30 rounded-lg text-primary font-mono text-sm hover:bg-primary/20 transition-colors"
+                  onClick={() => {
+                    setShowAvatarPicker(!showAvatarPicker);
+                    setAvatarPreview(null);
+                  }}
+                  className={`px-5 py-2.5 rounded-xl font-mono text-sm font-medium transition-all duration-300 flex items-center gap-2 btn-press ${
+                    showAvatarPicker
+                      ? "bg-danger/20 border border-danger/50 text-danger hover:bg-danger/30"
+                      : "bg-linear-to-r from-primary/20 to-accent/20 border border-primary/50 text-primary hover:from-primary/30 hover:to-accent/30 hover:shadow-[0_0_20px_rgba(0,255,159,0.3)] hover:scale-105"
+                  }`}
                 >
-                  {showAvatarPicker ? "Đóng" : "Chọn Avatar"}
+                  {showAvatarPicker ? (
+                    <>
+                      <span>✕</span> Đóng
+                    </>
+                  ) : (
+                    <>
+                      <span>🖼️</span> Chọn Avatar
+                    </>
+                  )}
                 </button>
-                <p className="text-xs font-mono text-foreground/40 mt-2">
-                  Chọn từ bộ sưu tập avatar có sẵn
+                <p className="text-xs font-mono text-foreground/50">
+                  {showAvatarPicker
+                    ? "Di chuột để xem trước, click để chọn"
+                    : `Đang dùng: ${avatarUrl
+                        .split(".")[0]
+                        .substring(0, 20)}...`}
                 </p>
               </div>
             </div>
 
-            {/* Avatar Picker */}
+            {/* Enhanced Avatar Picker */}
             {showAvatarPicker && (
-              <div className="mt-6 p-4 bg-background/50 border border-border rounded-lg">
-                <p className="text-sm font-mono text-foreground/60 mb-4">
-                  Chọn avatar:
-                </p>
-                <div className="grid grid-cols-4 sm:grid-cols-5 gap-3">
-                  {DEFAULT_AVATARS.map((avatar) => (
-                    <button
-                      key={avatar}
-                      type="button"
-                      onClick={() => {
-                        setAvatarUrl(avatar);
-                        setShowAvatarPicker(false);
-                      }}
-                      className={`relative aspect-square rounded-lg overflow-hidden border-2 transition-all hover:scale-105 ${
-                        avatarUrl === avatar
-                          ? "border-primary shadow-[0_0_15px_rgba(0,255,159,0.5)]"
-                          : "border-border hover:border-primary/50"
-                      }`}
-                    >
-                      <Image
-                        src={`/avatars/${avatar}`}
-                        alt={avatar}
-                        fill
-                        className="object-cover"
-                      />
-                      {avatarUrl === avatar && (
-                        <div className="absolute inset-0 bg-primary/20 flex items-center justify-center">
-                          <svg
-                            className="w-6 h-6 text-primary"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={3}
-                              d="M5 13l4 4L19 7"
-                            />
-                          </svg>
-                        </div>
-                      )}
-                    </button>
-                  ))}
+              <div className="mt-6 p-5 bg-background/80 border border-border rounded-2xl shadow-inner">
+                {/* Category Tabs */}
+                <div className="flex flex-wrap gap-2 mb-5 pb-4 border-b border-border/50">
+                  {(Object.keys(AVATAR_CATEGORIES) as AvatarCategory[]).map(
+                    (catKey) => {
+                      const category = AVATAR_CATEGORIES[catKey];
+                      return (
+                        <button
+                          key={catKey}
+                          type="button"
+                          onClick={() => setActiveCategory(catKey)}
+                          className={`px-4 py-2 rounded-xl font-mono text-sm transition-all duration-300 flex items-center gap-2 ${
+                            activeCategory === catKey
+                              ? "bg-primary/20 border-2 border-primary text-primary shadow-[0_0_15px_rgba(0,255,159,0.3)]"
+                              : "bg-surface/50 border border-border text-foreground/60 hover:border-primary/30 hover:text-foreground"
+                          }`}
+                        >
+                          <span className="text-lg">{category.icon}</span>
+                          <span>{category.name}</span>
+                          <span className="text-xs bg-background/50 px-1.5 py-0.5 rounded-full">
+                            {category.avatars.length}
+                          </span>
+                        </button>
+                      );
+                    }
+                  )}
+                </div>
+
+                {/* Avatar Grid with smooth animations */}
+                <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 gap-3">
+                  {AVATAR_CATEGORIES[activeCategory].avatars.map(
+                    (avatar, index) => (
+                      <button
+                        key={avatar}
+                        type="button"
+                        onMouseEnter={() => setAvatarPreview(avatar)}
+                        onMouseLeave={() => setAvatarPreview(null)}
+                        onClick={() => {
+                          setAvatarUrl(avatar);
+                          setAvatarPreview(null);
+                          setShowAvatarPicker(false);
+                        }}
+                        className={`relative aspect-square rounded-xl overflow-hidden border-2 transition-all duration-300 hover:scale-105 hover:z-10 ${
+                          avatarUrl === avatar
+                            ? "border-primary ring-2 ring-primary/50 shadow-[0_0_20px_rgba(0,255,159,0.5)]"
+                            : "border-border/50 hover:border-primary/50 hover:shadow-lg"
+                        }`}
+                        style={{
+                          animationDelay: `${index * 50}ms`,
+                          animation: "fadeInScale 0.3s ease-out forwards",
+                        }}
+                      >
+                        <Image
+                          src={`/avatars/${avatar}`}
+                          alt={avatar}
+                          fill
+                          className="object-cover"
+                          sizes="(max-width: 640px) 25vw, (max-width: 768px) 20vw, 16vw"
+                        />
+                        {/* Selected indicator */}
+                        {avatarUrl === avatar && (
+                          <div className="absolute inset-0 bg-primary/30 flex items-center justify-center backdrop-blur-[1px]">
+                            <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center shadow-lg">
+                              <svg
+                                className="w-5 h-5 text-background"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={3}
+                                  d="M5 13l4 4L19 7"
+                                />
+                              </svg>
+                            </div>
+                          </div>
+                        )}
+                        {/* Hover overlay */}
+                        {avatarUrl !== avatar && (
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-0 hover:opacity-100 transition-opacity flex items-end justify-center pb-2">
+                            <span className="text-white text-xs font-mono px-2 py-0.5 bg-black/50 rounded-full">
+                              Chọn
+                            </span>
+                          </div>
+                        )}
+                      </button>
+                    )
+                  )}
+                </div>
+
+                {/* Quick tips */}
+                <div className="mt-4 pt-4 border-t border-border/50 flex items-center justify-between text-xs font-mono text-foreground/40">
+                  <span>💡 Mẹo: Di chuột để xem trước avatar</span>
+                  <span>
+                    {AVATAR_CATEGORIES[activeCategory].avatars.length} avatar có
+                    sẵn
+                  </span>
                 </div>
               </div>
             )}
+
+            {/* CSS for animation */}
+            <style jsx>{`
+              @keyframes fadeInScale {
+                from {
+                  opacity: 0;
+                  transform: scale(0.8);
+                }
+                to {
+                  opacity: 1;
+                  transform: scale(1);
+                }
+              }
+            `}</style>
           </div>
 
           {/* Basic Info */}
-          <div className="bg-surface/60 backdrop-blur-md border border-border rounded-xl p-6">
-            <h2 className="text-lg font-bold font-mono text-primary mb-4">
+          <div
+            className="bg-surface/60 backdrop-blur-md border border-border rounded-xl p-6 animate-fade-in-up card-hover"
+            style={{ animationDelay: "200ms" }}
+          >
+            <h2 className="text-lg font-bold font-mono text-primary mb-4 flex items-center gap-2">
+              <span className="animate-float">📝</span>
               Thông tin cơ bản
             </h2>
 
@@ -304,7 +424,7 @@ export default function EditProfilePage() {
                   onChange={(e) => setDisplayName(e.target.value)}
                   maxLength={100}
                   required
-                  className="w-full px-4 py-3 bg-background/50 border border-border rounded-lg font-mono text-foreground placeholder:text-foreground/30 focus:outline-none focus:border-primary/50 transition-colors"
+                  className="w-full px-4 py-3 bg-background/50 border border-border rounded-lg font-mono text-foreground placeholder:text-foreground/30 focus:outline-none focus:border-primary/50 focus:shadow-[0_0_15px_rgba(0,255,159,0.2)] transition-all duration-300"
                   placeholder="Nhập tên hiển thị"
                 />
               </div>
@@ -319,7 +439,7 @@ export default function EditProfilePage() {
                   onChange={(e) => setBio(e.target.value)}
                   maxLength={500}
                   rows={4}
-                  className="w-full px-4 py-3 bg-background/50 border border-border rounded-lg font-mono text-foreground placeholder:text-foreground/30 focus:outline-none focus:border-primary/50 transition-colors resize-none"
+                  className="w-full px-4 py-3 bg-background/50 border border-border rounded-lg font-mono text-foreground placeholder:text-foreground/30 focus:outline-none focus:border-primary/50 focus:shadow-[0_0_15px_rgba(0,255,159,0.2)] transition-all duration-300 resize-none"
                   placeholder="Viết vài dòng giới thiệu về bản thân..."
                 />
                 <p className="text-xs font-mono text-foreground/40 mt-1 text-right">
@@ -337,7 +457,7 @@ export default function EditProfilePage() {
                   value={location}
                   onChange={(e) => setLocation(e.target.value)}
                   maxLength={100}
-                  className="w-full px-4 py-3 bg-background/50 border border-border rounded-lg font-mono text-foreground placeholder:text-foreground/30 focus:outline-none focus:border-primary/50 transition-colors"
+                  className="w-full px-4 py-3 bg-background/50 border border-border rounded-lg font-mono text-foreground placeholder:text-foreground/30 focus:outline-none focus:border-primary/50 focus:shadow-[0_0_15px_rgba(0,255,159,0.2)] transition-all duration-300"
                   placeholder="VD: Hà Nội, Việt Nam"
                 />
               </div>
@@ -352,7 +472,7 @@ export default function EditProfilePage() {
                   value={skills}
                   onChange={(e) => setSkills(e.target.value)}
                   maxLength={100}
-                  className="w-full px-4 py-3 bg-background/50 border border-border rounded-lg font-mono text-foreground placeholder:text-foreground/30 focus:outline-none focus:border-primary/50 transition-colors"
+                  className="w-full px-4 py-3 bg-background/50 border border-border rounded-lg font-mono text-foreground placeholder:text-foreground/30 focus:outline-none focus:border-primary/50 focus:shadow-[0_0_15px_rgba(0,255,159,0.2)] transition-all duration-300"
                   placeholder="VD: JavaScript, React, Gaming (cách nhau bởi dấu phẩy)"
                 />
                 <p className="text-xs font-mono text-foreground/40 mt-1">
@@ -363,8 +483,12 @@ export default function EditProfilePage() {
           </div>
 
           {/* Links */}
-          <div className="bg-surface/60 backdrop-blur-md border border-border rounded-xl p-6">
-            <h2 className="text-lg font-bold font-mono text-secondary mb-4">
+          <div
+            className="bg-surface/60 backdrop-blur-md border border-border rounded-xl p-6 animate-fade-in-up card-hover"
+            style={{ animationDelay: "300ms" }}
+          >
+            <h2 className="text-lg font-bold font-mono text-secondary mb-4 flex items-center gap-2">
+              <span className="animate-float">🔗</span>
               Liên kết
             </h2>
 
@@ -379,7 +503,7 @@ export default function EditProfilePage() {
                   value={website}
                   onChange={(e) => setWebsite(e.target.value)}
                   maxLength={200}
-                  className="w-full px-4 py-3 bg-background/50 border border-border rounded-lg font-mono text-foreground placeholder:text-foreground/30 focus:outline-none focus:border-primary/50 transition-colors"
+                  className="w-full px-4 py-3 bg-background/50 border border-border rounded-lg font-mono text-foreground placeholder:text-foreground/30 focus:outline-none focus:border-primary/50 focus:shadow-[0_0_15px_rgba(0,255,159,0.2)] transition-all duration-300"
                   placeholder="https://your-website.com"
                 />
               </div>
@@ -463,7 +587,7 @@ export default function EditProfilePage() {
                   type="url"
                   value={facebook}
                   onChange={(e) => setFacebook(e.target.value)}
-                  className="w-full px-4 py-3 bg-background/50 border border-border rounded-lg font-mono text-foreground placeholder:text-foreground/30 focus:outline-none focus:border-primary/50 transition-colors"
+                  className="w-full px-4 py-3 bg-background/50 border border-border rounded-lg font-mono text-foreground placeholder:text-foreground/30 focus:outline-none focus:border-primary/50 focus:shadow-[0_0_15px_rgba(0,255,159,0.2)] transition-all duration-300"
                   placeholder="https://facebook.com/username"
                 />
               </div>
@@ -471,11 +595,14 @@ export default function EditProfilePage() {
           </div>
 
           {/* Submit Button */}
-          <div className="flex gap-4">
+          <div
+            className="flex gap-4 animate-fade-in-up"
+            style={{ animationDelay: "400ms" }}
+          >
             <button
               type="submit"
               disabled={saving}
-              className="flex-1 py-4 bg-primary/20 hover:bg-primary/30 border border-primary/50 rounded-xl text-primary font-mono font-bold transition-all disabled:opacity-50 disabled:cursor-not-allowed hover:shadow-[0_0_20px_rgba(0,255,159,0.3)]"
+              className="flex-1 py-4 bg-primary/20 hover:bg-primary/30 border border-primary/50 rounded-xl text-primary font-mono font-bold transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed hover:shadow-[0_0_30px_rgba(0,255,159,0.4)] hover:scale-[1.02] btn-press"
             >
               {saving ? (
                 <span className="flex items-center justify-center gap-2">
@@ -488,7 +615,7 @@ export default function EditProfilePage() {
             </button>
             <Link
               href="/forum"
-              className="px-8 py-4 bg-surface border border-border rounded-xl text-foreground/70 font-mono hover:border-danger/50 hover:text-danger transition-colors"
+              className="px-8 py-4 bg-surface border border-border rounded-xl text-foreground/70 font-mono hover:border-danger/50 hover:text-danger hover:scale-105 transition-all duration-300 btn-press"
             >
               Hủy
             </Link>

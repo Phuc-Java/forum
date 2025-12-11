@@ -50,8 +50,8 @@ export default function AuthForm() {
       const result = await login(email, password);
       if (result.success) {
         setState({ success: true });
-        router.push("/");
-        router.refresh();
+        // Use window.location for hard redirect to ensure session is properly recognized
+        window.location.href = "/";
       } else {
         setState({ error: result.error });
         setLoading(false);
@@ -77,8 +77,8 @@ export default function AuthForm() {
         // Auto create profile for new user
         await createProfile(result.user.$id, name || email.split("@")[0]);
         setState({ success: true });
-        router.push("/");
-        router.refresh();
+        // Use window.location for hard redirect to ensure session is properly recognized
+        window.location.href = "/";
       } else {
         setState({ error: result.error });
         setLoading(false);
@@ -335,6 +335,32 @@ export default function AuthForm() {
               className="w-full bg-background/50 border-2 border-border focus:border-secondary rounded-lg px-4 py-3 text-foreground placeholder-foreground/30 transition-all outline-none font-mono disabled:opacity-50"
             />
           </div>
+          {/* Guest Login Button */}
+          {mode === "login" && (
+            <button
+              type="button"
+              disabled={loading}
+              onClick={async () => {
+                setLoading(true);
+                setState({});
+                const result = await login("guest@gmail.com", "guest1234");
+                if (result.success) {
+                  setState({ success: true });
+                  router.push("/");
+                  router.refresh();
+                } else {
+                  setState({
+                    error: result.error || "Không thể đăng nhập khách",
+                  });
+                  setLoading(false);
+                }
+              }}
+              className="w-full py-3 rounded-lg font-mono font-medium tracking-wider text-foreground/70 bg-gray-500/20 border border-gray-500/50 hover:bg-gray-500/30 hover:text-foreground transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+            >
+              <span>👤</span>
+              Đăng Nhập Với Tài Khoản Khách
+            </button>
+          )}
           {/* Submit Button */}
           <button
             type="submit"

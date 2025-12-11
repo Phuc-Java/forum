@@ -106,6 +106,110 @@ export async function createNewPostNotifications(data: {
 }
 
 /**
+ * Create notifications for new resource post
+ * Only notifies users who have permission to view the resource
+ *
+ * @param data - Resource info
+ * @param allowedRoles - JSON string of allowed roles (e.g., '["chi_ton", "thanh_nhan"]')
+ *                       If empty/null, only admin (chi_ton) can view, so only notify them
+ */
+export async function createNewResourceNotifications(data: {
+  resourceId: string;
+  resourceTitle: string;
+  authorId: string;
+  authorName: string;
+  allowedRoles: string | null | undefined;
+  category: string;
+}) {
+  try {
+    const client = createServerClient();
+    const databases = new Databases(client);
+
+    // Parse allowed roles
+    let allowedRolesList: string[] = [];
+    if (data.allowedRoles) {
+      try {
+        if (data.allowedRoles.startsWith("[")) {
+          allowedRolesList = JSON.parse(data.allowedRoles) as string[];
+        } else if (data.allowedRoles.trim() !== "") {
+          allowedRolesList = data.allowedRoles
+            .split(",")
+            .map((s) => s.trim())
+            .filter(Boolean);
+        }
+      } catch {
+        allowedRolesList = [];
+      }
+    }
+
+    // chi_ton always has access
+    if (!allowedRolesList.includes("chi_ton")) {
+      allowedRolesList.push("chi_ton");
+    }
+
+    // Get all profiles except the author
+    const profiles = await databases.listDocuments(
+      APPWRITE_CONFIG.databaseId,
+      APPWRITE_CONFIG.collections.profiles,
+      [Query.notEqual("userId", data.authorId), Query.limit(500)]
+    );
+
+    // Filter profiles by role - only notify users who can view the resource
+    const eligibleProfiles = profiles.documents.filter((profile) => {
+      const userRole = profile.role || "pham_nhan";
+
+      // If no specific roles selected (empty), only chi_ton can view
+      if (
+        allowedRolesList.length === 0 ||
+        (allowedRolesList.length === 1 && allowedRolesList[0] === "chi_ton")
+      ) {
+        return userRole === "chi_ton";
+      }
+
+      // Check if user's role is in allowed list
+      return allowedRolesList.includes(userRole);
+    });
+
+    if (eligibleProfiles.length === 0) {
+      return {
+        success: true,
+        count: 0,
+        message: "No eligible users to notify",
+      };
+    }
+
+    // Create notifications in parallel
+    const notificationPromises = eligibleProfiles.map((profile) =>
+      databases.createDocument(
+        APPWRITE_CONFIG.databaseId,
+        APPWRITE_CONFIG.collections.notifications,
+        ID.unique(),
+        {
+          userId: profile.userId,
+          type: "new_resource",
+          fromUserId: data.authorId,
+          fromUserName: data.authorName,
+          postId: data.resourceId, // Using postId field for resourceId
+          postTitle: `[${data.category}] ${data.resourceTitle}`.substring(
+            0,
+            200
+          ),
+          commentContent: null,
+          isRead: false,
+        }
+      )
+    );
+
+    await Promise.allSettled(notificationPromises);
+
+    return { success: true, count: eligibleProfiles.length };
+  } catch (error) {
+    console.error("createNewResourceNotifications error:", error);
+    return { success: false, error: "Không thể tạo thông báo" };
+  }
+}
+
+/**
  * Get notifications for a user (Server Action)
  * Optimized with pagination and caching headers
  */

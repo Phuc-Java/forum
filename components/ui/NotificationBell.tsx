@@ -219,6 +219,41 @@ export default function NotificationBell({ userId }: NotificationBellProps) {
       };
     }
 
+    // new_resource - Tài nguyên mới
+    if (notification.type === "new_resource") {
+      return {
+        icon: (
+          <svg
+            className="w-5 h-5 text-amber-400"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"
+            />
+          </svg>
+        ),
+        message: (
+          <span>
+            <span className="font-semibold text-secondary">
+              {notification.fromUserName}
+            </span>
+            {" đã đăng tài nguyên mới: "}
+            <span className="font-medium text-amber-400">
+              &ldquo;{notification.postTitle}&rdquo;
+            </span>
+          </span>
+        ),
+        preview: null,
+        // Link to resources page instead of forum
+        customLink: `/resources/${notification.postId}`,
+      };
+    }
+
     // new_post
     return {
       icon: (
@@ -257,16 +292,16 @@ export default function NotificationBell({ userId }: NotificationBellProps) {
       <button
         ref={bellRef}
         onClick={() => setIsOpen(!isOpen)}
-        className="relative p-2 rounded-lg bg-background/50 border border-border hover:border-primary/50 hover:bg-primary/10 transition-all duration-300 group"
+        className="relative p-2 rounded-lg bg-background/50 border border-border hover:border-primary/50 hover:bg-primary/10 hover:shadow-[0_0_15px_rgba(0,255,159,0.2)] hover:scale-105 transition-all duration-300 group btn-press"
         aria-label="Thông báo"
       >
         {/* Bell Icon */}
         <svg
-          className={`w-5 h-5 transition-colors ${
+          className={`w-5 h-5 transition-all duration-300 ${
             isOpen
-              ? "text-primary"
+              ? "text-primary scale-110"
               : "text-foreground/70 group-hover:text-primary"
-          }`}
+          } ${unreadCount > 0 ? "animate-[shake_0.5s_ease-in-out]" : ""}`}
           fill="none"
           stroke="currentColor"
           viewBox="0 0 24 24"
@@ -281,7 +316,7 @@ export default function NotificationBell({ userId }: NotificationBellProps) {
 
         {/* Unread Badge */}
         {!initialLoading && unreadCount > 0 && (
-          <span className="absolute -top-1 -right-1 flex items-center justify-center min-w-[18px] h-[18px] px-1 text-[10px] font-bold text-background bg-danger rounded-full animate-pulse shadow-lg shadow-danger/50">
+          <span className="absolute -top-1 -right-1 flex items-center justify-center min-w-[18px] h-[18px] px-1 text-[10px] font-bold text-background bg-danger rounded-full animate-glow-pulse shadow-lg shadow-danger/50">
             {unreadCount > 99 ? "99+" : unreadCount}
           </span>
         )}
@@ -296,7 +331,7 @@ export default function NotificationBell({ userId }: NotificationBellProps) {
       {isOpen && (
         <div
           ref={dropdownRef}
-          className="absolute right-0 top-full mt-2 w-80 sm:w-96 bg-surface border border-border rounded-xl shadow-2xl overflow-hidden z-50 animate-in fade-in slide-in-from-top-2 duration-200"
+          className="absolute right-0 top-full mt-2 w-80 sm:w-96 bg-surface border border-border rounded-xl shadow-2xl overflow-hidden z-50 animate-fade-in-scale"
         >
           {/* Header */}
           <div className="flex items-center justify-between px-4 py-3 bg-background/50 border-b border-border">
@@ -326,7 +361,7 @@ export default function NotificationBell({ userId }: NotificationBellProps) {
             {unreadCount > 0 && (
               <button
                 onClick={handleMarkAllAsRead}
-                className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-mono text-primary bg-primary/10 hover:bg-primary/20 rounded-lg transition-colors border border-primary/30"
+                className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-mono text-primary bg-primary/10 hover:bg-primary/20 hover:scale-105 rounded-lg transition-all duration-300 border border-primary/30 btn-press"
               >
                 <svg
                   className="w-3.5 h-3.5"
@@ -358,8 +393,8 @@ export default function NotificationBell({ userId }: NotificationBellProps) {
                 </div>
               </div>
             ) : notifications.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-12 px-4">
-                <div className="w-16 h-16 rounded-full bg-background/50 flex items-center justify-center mb-4">
+              <div className="flex flex-col items-center justify-center py-12 px-4 animate-fade-in">
+                <div className="w-16 h-16 rounded-full bg-background/50 flex items-center justify-center mb-4 animate-float">
                   <svg
                     className="w-8 h-8 text-foreground/30"
                     fill="none"
@@ -383,21 +418,26 @@ export default function NotificationBell({ userId }: NotificationBellProps) {
               </div>
             ) : (
               <div className="divide-y divide-border/50">
-                {notifications.map((notification) => {
+                {notifications.map((notification, index) => {
                   const display = getNotificationDisplay(notification);
+                  // Use customLink if available, otherwise default to forum
+                  const notificationLink =
+                    (display as { customLink?: string }).customLink ||
+                    `/forum#post-${notification.postId}`;
                   return (
                     <Link
                       key={notification.$id}
-                      href={`/forum#post-${notification.postId}`}
+                      href={notificationLink}
                       onClick={() => handleMarkAsRead(notification)}
-                      className={`block px-4 py-3 hover:bg-primary/5 transition-colors relative group ${
+                      className={`block px-4 py-3 hover:bg-primary/5 transition-all duration-300 relative group animate-fade-in ${
                         !notification.isRead ? "bg-primary/10" : ""
                       }`}
+                      style={{ animationDelay: `${index * 30}ms` }}
                     >
                       <div className="flex gap-3">
                         {/* Icon */}
                         <div
-                          className={`shrink-0 w-10 h-10 rounded-full flex items-center justify-center ${
+                          className={`shrink-0 w-10 h-10 rounded-full flex items-center justify-center transition-all duration-300 group-hover:scale-110 ${
                             !notification.isRead
                               ? "bg-primary/20"
                               : "bg-background/50"

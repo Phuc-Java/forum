@@ -4,6 +4,9 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { getCurrentUser } from "@/lib/appwrite/client";
 import { createPost } from "@/lib/actions/posts";
+import { getProfileByUserId, type Profile } from "@/lib/actions/profile";
+import { RoleBadge } from "@/components/ui/RoleBadge";
+import { getRoleInfo, hasPermission } from "@/lib/roles";
 import Link from "next/link";
 
 interface User {
@@ -12,13 +15,29 @@ interface User {
   email: string;
 }
 
-interface CreatePostFormProps {
-  serverUser?: User | null;
+interface ServerProfile {
+  $id: string;
+  userId: string;
+  displayName: string;
+  role?: string;
+  customTags?: string;
+  permissions?: string;
 }
 
-export default function CreatePostForm({ serverUser }: CreatePostFormProps) {
+interface CreatePostFormProps {
+  serverUser?: User | null;
+  serverProfile?: Profile | ServerProfile | null;
+}
+
+export default function CreatePostForm({
+  serverUser,
+  serverProfile,
+}: CreatePostFormProps) {
   const router = useRouter();
   const [user, setUser] = useState<User | null>(serverUser || null);
+  const [profile, setProfile] = useState<Profile | ServerProfile | null>(
+    serverProfile || null
+  );
   const [loading, setLoading] = useState(!serverUser);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -30,11 +49,23 @@ export default function CreatePostForm({ serverUser }: CreatePostFormProps) {
       const checkAuth = async () => {
         const currentUser = await getCurrentUser();
         setUser(currentUser);
+        if (currentUser) {
+          const userProfile = await getProfileByUserId(currentUser.$id);
+          setProfile(userProfile);
+        }
         setLoading(false);
       };
       checkAuth();
     }
   }, [serverUser]);
+
+  // Check permission to create post
+  const canCreatePost = hasPermission(
+    profile?.role,
+    "canCreatePost",
+    profile?.permissions
+  );
+  const roleInfo = getRoleInfo(profile?.role);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -92,6 +123,34 @@ export default function CreatePostForm({ serverUser }: CreatePostFormProps) {
     );
   }
 
+  // Check if user has permission to create posts
+  if (!canCreatePost) {
+    return (
+      <div
+        className={`backdrop-blur-md border rounded-lg p-8 text-center ${roleInfo.bgColor} ${roleInfo.borderColor}`}
+      >
+        <div className="text-4xl mb-4">{roleInfo.icon}</div>
+        <h3 className={`text-xl font-bold font-mono mb-2 ${roleInfo.color}`}>
+          Chưa Đủ Cấp Bậc
+        </h3>
+        <div className="flex justify-center mb-3">
+          <RoleBadge role={profile?.role} size="md" />
+        </div>
+        <p className="text-foreground/60 font-mono text-sm mb-4">
+          Cấp bậc của bạn là{" "}
+          <span className={roleInfo.color}>&quot;{roleInfo.name}&quot;</span>.
+          <br />
+          Bạn cần đạt cấp{" "}
+          <span className="text-blue-400">&quot;Chí Cường Giả&quot;</span> trở
+          lên để đăng bài.
+        </p>
+        <div className="text-xs font-mono text-foreground/40 bg-background/30 rounded-lg p-3">
+          💡 Tham gia bình luận và tương tác để được nâng cấp!
+        </div>
+      </div>
+    );
+  }
+
   return (
     <form
       onSubmit={handleSubmit}
@@ -103,10 +162,15 @@ export default function CreatePostForm({ serverUser }: CreatePostFormProps) {
             {user.name?.charAt(0).toUpperCase() || "U"}
           </span>
         </div>
-        <div>
-          <p className="font-mono font-bold text-foreground">
-            {user.name || "Ẩn Danh"}
-          </p>
+        <div className="flex-1">
+          <div className="flex items-center gap-2">
+            <p
+              className={`font-mono font-bold ${roleInfo.color} ${roleInfo.textGlow}`}
+            >
+              {profile?.displayName || user.name || "Ẩn Danh"}
+            </p>
+            <RoleBadge role={profile?.role} size="sm" showName={false} />
+          </div>
           <p className="text-xs font-mono text-foreground/40">
             Đang soạn bài viết mới...
           </p>

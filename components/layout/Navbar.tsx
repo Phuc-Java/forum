@@ -4,9 +4,15 @@ import { useState, useEffect } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
-import { getCurrentUser, logout } from "@/lib/appwrite/client";
+import {
+  getCurrentUser,
+  logout,
+  syncSessionCookie,
+} from "@/lib/appwrite/client";
 import { getProfileByUserId, type Profile } from "@/lib/actions/profile";
 import NotificationBell from "@/components/ui/NotificationBell";
+import { RoleBadge } from "@/components/ui/RoleBadge";
+import { getRoleInfo, isAdmin } from "@/lib/roles";
 
 interface User {
   $id: string;
@@ -33,6 +39,10 @@ export default function Navbar() {
       if (currentUser) {
         const userProfile = await getProfileByUserId(currentUser.$id);
         setProfile(userProfile);
+
+        // Sync session cookie for server-side auth
+        // This ensures server can recognize the user for SSR pages
+        await syncSessionCookie();
       } else {
         setProfile(null);
       }
@@ -41,6 +51,55 @@ export default function Navbar() {
     };
     checkAuth();
   }, [pathname]);
+
+  // Auto logout when ALL browser tabs/windows are closed
+  // Uses BroadcastChannel to coordinate between tabs
+  useEffect(() => {
+    if (!user) return;
+
+    // Track this tab
+    const tabId = Math.random().toString(36).substring(7);
+    const STORAGE_KEY = "forum_active_tabs";
+
+    // Register this tab
+    const registerTab = () => {
+      const tabs = JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
+      if (!tabs.includes(tabId)) {
+        tabs.push(tabId);
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(tabs));
+      }
+    };
+
+    // Unregister this tab
+    const unregisterTab = () => {
+      const tabs = JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
+      const newTabs = tabs.filter((id: string) => id !== tabId);
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(newTabs));
+
+      // If this was the last tab, logout
+      if (newTabs.length === 0) {
+        navigator.sendBeacon("/api/logout");
+      }
+    };
+
+    registerTab();
+
+    // Handle tab close
+    window.addEventListener("beforeunload", unregisterTab);
+
+    // Handle tab becoming visible again (user returned)
+    const handleVisibility = () => {
+      if (document.visibilityState === "visible") {
+        registerTab();
+      }
+    };
+    document.addEventListener("visibilitychange", handleVisibility);
+
+    return () => {
+      window.removeEventListener("beforeunload", unregisterTab);
+      document.removeEventListener("visibilitychange", handleVisibility);
+    };
+  }, [user]);
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -67,18 +126,18 @@ export default function Navbar() {
   };
 
   return (
-    <nav className="sticky top-0 z-50 bg-surface/80 backdrop-blur-lg border-b-2 border-border shadow-lg">
+    <nav className="sticky top-0 z-50 bg-surface/80 backdrop-blur-lg border-b-2 border-border shadow-lg animate-fade-in">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
           <Link
             href="/"
-            className="flex items-center gap-3 hover:opacity-80 transition-opacity"
+            className="flex items-center gap-3 hover:opacity-80 transition-all duration-300 group"
           >
             <div className="relative w-10 h-10 flex items-center justify-center">
-              <div className="absolute inset-0 bg-primary/20 rounded-lg animate-pulse"></div>
+              <div className="absolute inset-0 bg-primary/20 rounded-lg animate-glow-pulse"></div>
               <svg
-                className="w-6 h-6 text-primary relative z-10"
+                className="w-6 h-6 text-primary relative z-10 group-hover:scale-110 transition-transform duration-300"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -93,14 +152,16 @@ export default function Navbar() {
             </div>
             <div className="flex flex-col">
               <h1 className="text-2xl font-bold font-mono">
-                <span className="text-primary text-glow-primary">Xóm</span>
-                <span className="text-secondary text-glow-secondary">
+                <span className="text-primary text-glow-primary group-hover:animate-glow-pulse">
+                  Xóm
+                </span>
+                <span className="text-secondary text-glow-secondary group-hover:animate-glow-pulse">
                   {" "}
                   Nhà Lá
                 </span>
               </h1>
               <p className="text-[10px] text-accent font-mono tracking-widest opacity-60">
-                BẢO MẬT • AN TOÀN • KẾT NỐI
+                Diễn đàn khét tiếng nhất hành tinh
               </p>
             </div>
           </Link>
@@ -109,31 +170,71 @@ export default function Navbar() {
           <div className="hidden md:flex items-center gap-6">
             <Link
               href="/"
-              className={`font-mono text-sm transition-colors ${
+              className={`font-mono text-sm transition-all duration-300 relative hover:scale-105 ${
                 pathname === "/"
                   ? "text-primary"
                   : "text-foreground/70 hover:text-primary"
               }`}
             >
-              Trang Chủ
+              <span className="relative">
+                Trang Chủ
+                {pathname === "/" && (
+                  <span className="absolute -bottom-1 left-0 right-0 h-0.5 bg-primary animate-fade-in rounded-full"></span>
+                )}
+              </span>
+            </Link>
+            <Link
+              href="/members"
+              className={`font-mono text-sm transition-all duration-300 relative hover:scale-105 ${
+                pathname === "/members"
+                  ? "text-secondary"
+                  : "text-foreground/70 hover:text-secondary"
+              }`}
+            >
+              <span className="relative">
+                Thành Viên
+                {pathname === "/members" && (
+                  <span className="absolute -bottom-1 left-0 right-0 h-0.5 bg-secondary animate-fade-in rounded-full"></span>
+                )}
+              </span>
+            </Link>
+            <Link
+              href="/resources"
+              className={`font-mono text-sm transition-all duration-300 relative hover:scale-105 ${
+                pathname?.startsWith("/resources")
+                  ? "text-accent"
+                  : "text-foreground/70 hover:text-accent"
+              }`}
+            >
+              <span className="relative">
+                Tài Nguyên
+                {pathname?.startsWith("/resources") && (
+                  <span className="absolute -bottom-1 left-0 right-0 h-0.5 bg-accent animate-fade-in rounded-full"></span>
+                )}
+              </span>
             </Link>
             <Link
               href="/forum"
-              className={`font-mono text-sm transition-colors ${
+              className={`font-mono text-sm transition-all duration-300 relative hover:scale-105 ${
                 pathname === "/forum"
                   ? "text-primary"
                   : "text-foreground/70 hover:text-primary"
               }`}
             >
-              Góp Ý
+              <span className="relative">
+                Góp Ý
+                {pathname === "/forum" && (
+                  <span className="absolute -bottom-1 left-0 right-0 h-0.5 bg-primary animate-fade-in rounded-full"></span>
+                )}
+              </span>
             </Link>
           </div>
 
           {/* Auth Section */}
           <div className="flex items-center gap-4">
             {loading ? (
-              <div className="flex items-center gap-2 px-3 py-1 bg-background/50 rounded-full border border-border">
-                <span className="w-2 h-2 rounded-full bg-accent animate-pulse"></span>
+              <div className="flex items-center gap-2 px-3 py-1 bg-background/50 rounded-full border border-border animate-pulse">
+                <span className="w-2 h-2 rounded-full bg-accent animate-glow-pulse"></span>
                 <span className="text-xs font-mono text-foreground/60">
                   ĐANG TẢI...
                 </span>
@@ -150,9 +251,9 @@ export default function Navbar() {
                       e.stopPropagation();
                       setShowDropdown(!showDropdown);
                     }}
-                    className="hidden sm:flex items-center gap-3 px-4 py-2 bg-background/50 rounded-lg border border-border hover:border-primary/50 transition-all"
+                    className="hidden sm:flex items-center gap-3 px-4 py-2 bg-background/50 rounded-lg border border-border hover:border-primary/50 hover:shadow-[0_0_15px_rgba(0,255,159,0.2)] transition-all duration-300 btn-press"
                   >
-                    <div className="w-8 h-8 rounded-full overflow-hidden border-2 border-primary/50">
+                    <div className="w-8 h-8 rounded-full overflow-hidden border-2 border-primary/50 hover:scale-105 transition-transform duration-300">
                       <Image
                         src={getAvatarSrc()}
                         alt="Avatar"
@@ -162,16 +263,27 @@ export default function Navbar() {
                       />
                     </div>
                     <div className="flex flex-col text-left">
-                      <span className="text-sm font-mono text-foreground font-bold">
-                        {profile?.displayName || user.name || "Ẩn Danh"}
-                      </span>
+                      <div className="flex items-center gap-2">
+                        <span
+                          className={`text-sm font-mono font-bold ${
+                            getRoleInfo(profile?.role).color
+                          } ${getRoleInfo(profile?.role).textGlow}`}
+                        >
+                          {profile?.displayName || user.name || "Ẩn Danh"}
+                        </span>
+                        <RoleBadge
+                          role={profile?.role}
+                          size="sm"
+                          showName={false}
+                        />
+                      </div>
                       <span className="text-xs font-mono text-primary flex items-center gap-1">
-                        <span className="w-1.5 h-1.5 bg-primary rounded-full animate-pulse"></span>
+                        <span className="w-1.5 h-1.5 bg-primary rounded-full animate-glow-pulse"></span>
                         TRỰC TUYẾN
                       </span>
                     </div>
                     <svg
-                      className={`w-4 h-4 text-foreground/50 transition-transform ${
+                      className={`w-4 h-4 text-foreground/50 transition-transform duration-300 ${
                         showDropdown ? "rotate-180" : ""
                       }`}
                       fill="none"
@@ -189,11 +301,18 @@ export default function Navbar() {
 
                   {/* Dropdown Menu */}
                   {showDropdown && (
-                    <div className="absolute right-0 top-full mt-2 w-56 bg-surface border border-border rounded-xl shadow-lg overflow-hidden z-50">
+                    <div className="absolute right-0 top-full mt-2 w-64 bg-surface border border-border rounded-xl shadow-lg overflow-hidden z-50 animate-fade-in-scale">
                       <div className="p-3 border-b border-border bg-background/50">
-                        <p className="font-mono text-sm font-bold text-foreground truncate">
-                          {profile?.displayName || user.name}
-                        </p>
+                        <div className="flex items-center gap-2 mb-1">
+                          <p
+                            className={`font-mono text-sm font-bold truncate ${
+                              getRoleInfo(profile?.role).color
+                            }`}
+                          >
+                            {profile?.displayName || user.name}
+                          </p>
+                          <RoleBadge role={profile?.role} size="sm" />
+                        </div>
                         <p className="font-mono text-xs text-foreground/50 truncate">
                           {user.email}
                         </p>
@@ -201,7 +320,7 @@ export default function Navbar() {
                       <div className="py-2">
                         <Link
                           href={`/profile/${user.$id}`}
-                          className="flex items-center gap-3 px-4 py-2.5 text-foreground/80 hover:bg-primary/10 hover:text-primary transition-colors"
+                          className="flex items-center gap-3 px-4 py-2.5 text-foreground/80 hover:bg-primary/10 hover:text-primary hover:pl-6 transition-all duration-300"
                         >
                           <svg
                             className="w-4 h-4"
@@ -218,27 +337,55 @@ export default function Navbar() {
                           </svg>
                           <span className="font-mono text-sm">Xem Profile</span>
                         </Link>
-                        <Link
-                          href="/profile/edit"
-                          className="flex items-center gap-3 px-4 py-2.5 text-foreground/80 hover:bg-primary/10 hover:text-primary transition-colors"
-                        >
-                          <svg
-                            className="w-4 h-4"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
+                        {/* Hide edit profile for guest (no_le) */}
+                        {profile?.role !== "no_le" && (
+                          <Link
+                            href="/profile/edit"
+                            className="flex items-center gap-3 px-4 py-2.5 text-foreground/80 hover:bg-primary/10 hover:text-primary hover:pl-6 transition-all duration-300"
                           >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
-                            />
-                          </svg>
-                          <span className="font-mono text-sm">
-                            Chỉnh sửa Profile
-                          </span>
-                        </Link>
+                            <svg
+                              className="w-4 h-4"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+                              />
+                            </svg>
+                            <span className="font-mono text-sm">
+                              Chỉnh sửa Profile
+                            </span>
+                          </Link>
+                        )}
+
+                        {/* Admin Link - Only show for admin roles */}
+                        {isAdmin(profile?.role) && (
+                          <Link
+                            href="/admin"
+                            className="flex items-center gap-3 px-4 py-2.5 text-amber-400 hover:bg-amber-500/10 hover:text-amber-300 hover:pl-6 transition-all duration-300"
+                          >
+                            <svg
+                              className="w-4 h-4"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"
+                              />
+                            </svg>
+                            <span className="font-mono text-sm">
+                              🔥 Quản trị
+                            </span>
+                          </Link>
+                        )}
                       </div>
                       <div className="py-2 border-t border-border">
                         <button

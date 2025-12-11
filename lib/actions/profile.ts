@@ -26,6 +26,10 @@ export interface Profile {
   website: string | null;
   socialLinks: string | null; // JSON string
   skills: string | null;
+  // Role system fields
+  role: string | null;
+  customTags: string | null;
+  permissions: string | null;
 }
 
 export interface SocialLinks {
@@ -118,6 +122,9 @@ export async function createProfile(
         website: null,
         socialLinks: null,
         skills: null,
+        role: "pham_nhan", // Default role: Phàm Nhân
+        customTags: null,
+        permissions: null,
       }
     );
 
