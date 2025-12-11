@@ -16,6 +16,8 @@ const nextConfig: NextConfig = {
   // Image optimization
   images: {
     formats: ["image/avif", "image/webp"],
+    // Allow Appwrite storage host for thumbnails and files
+    domains: ["sgp.cloud.appwrite.io"],
     minimumCacheTTL: 60 * 60 * 24, // 24 hours
   },
 
