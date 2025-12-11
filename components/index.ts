@@ -11,6 +11,7 @@ export { default as HomeAuthButtons } from "./ui/HomeAuthButtons";
 export { default as SplineModel } from "./ui/SplineModel";
 export { default as NotificationBell } from "./ui/NotificationBell";
 export { default as MusicPlayer } from "./ui/MusicPlayer";
+export { default as FunFactBox } from "./ui/FunFactBox";
 
 // Role components
 export {

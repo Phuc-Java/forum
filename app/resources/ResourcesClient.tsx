@@ -66,7 +66,7 @@ export default function ResourcesClient({
   const categoryInfo = getCategoryInfo(activeCategory);
 
   return (
-    <main className="min-h-screen bg-background relative overflow-hidden">
+    <main className="min-h-screen bg-background relative overflow-visible">
       {/* Background effects */}
       <div className="fixed inset-0 pointer-events-none">
         <div className="absolute top-40 left-0 w-72 h-72 bg-accent/5 rounded-full blur-3xl animate-float"></div>

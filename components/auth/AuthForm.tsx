@@ -96,7 +96,7 @@ export default function AuthForm() {
   }
 
   return (
-    <div className="w-full max-w-md mx-auto">
+    <div className="w-full max-w-md md:max-w-xl lg:max-w-2xl mx-auto">
       {/* Tabs with animated indicator */}
       <div className="flex border-b-2 border-border relative">
         {/* Animated background indicator */}
