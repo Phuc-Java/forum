@@ -16,7 +16,12 @@ export default function RememberallRobot() {
     const ease = 0.12;
 
     function onPointerMove(e: PointerEvent) {
-      const rect = node.getBoundingClientRect();
+      // Re-read ref at event time and guard against null — this avoids
+      // TypeScript errors about possibly-null `node` when the handler runs
+      // after unmount or if the ref changed.
+      const el = ref.current;
+      if (!el) return;
+      const rect = el.getBoundingClientRect();
       const cx = rect.left + rect.width / 2;
       const cy = rect.top + rect.height / 2;
       const mx = e.clientX - cx;
@@ -44,7 +49,8 @@ export default function RememberallRobot() {
     raf = requestAnimationFrame(loop);
 
     return () => {
-      node.removeEventListener("pointermove", onPointerMove);
+      const el = ref.current || node;
+      if (el) el.removeEventListener("pointermove", onPointerMove);
       if (raf) cancelAnimationFrame(raf);
     };
   }, []);
