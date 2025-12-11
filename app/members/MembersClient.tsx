@@ -185,9 +185,21 @@ export default function MembersClient({
       <div className="max-w-6xl mx-auto px-4 space-y-8 relative z-10">
         {/* Header */}
         <div className="text-center py-8 space-y-4 animate-fade-in">
-          <h1 className="text-4xl md:text-5xl font-bold font-mono">
-            <span className="text-primary text-glow-primary animate-glow-pulse">
-              {">"}{" "}
+          <h1 className="text-4xl md:text-5xl font-bold font-mono flex items-center justify-center">
+            <span className="title-icon-box">
+              <span className="title-icon-inner text-primary text-glow-primary animate-glow-pulse">
+                <svg
+                  className="w-4 h-4"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth={2}
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="M9 6l6 6-6 6" />
+                </svg>
+              </span>
             </span>
             <span className="text-foreground">Thành </span>
             <span className="text-secondary text-glow-secondary">Viên</span>

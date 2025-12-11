@@ -734,6 +734,48 @@ html::-webkit-scrollbar {
   animation: bounce-slow 0.5s ease;
 }
 
+/* Title Icon Box - reusable square icon with subtle neon border and glow */
+.title-icon-box {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 3rem; /* 48px */
+  height: 3rem;
+  border-radius: 9999px; /* fully rounded */
+  background: linear-gradient(
+    180deg,
+    rgba(10, 10, 15, 0.72),
+    rgba(10, 10, 15, 0.6)
+  );
+  border: 1px solid rgba(255, 255, 255, 0.03);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.6), 0 0 22px rgba(0, 255, 159, 0.08),
+    inset 0 0 6px rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(6px);
+  margin-right: 0.5rem;
+}
+
+.title-icon-box.secondary {
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.6), 0 0 28px var(--glow-secondary),
+    inset 0 0 6px rgba(0, 0, 0, 0.4);
+  border-color: rgba(189, 0, 255, 0.1);
+}
+
+.title-icon-inner {
+  font-size: 1.15rem;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Gentle hover lift */
+.title-icon-box:hover {
+  transform: translateY(-2px);
+  transition: transform 180ms ease, box-shadow 180ms ease;
+  box-shadow: 0 14px 30px rgba(0, 0, 0, 0.65), 0 0 48px rgba(0, 255, 159, 0.12),
+    inset 0 0 8px rgba(0, 0, 0, 0.45);
+}
+
 /* Tooltip Animation */
 @keyframes tooltipFade {
   from {
