@@ -129,9 +129,14 @@ export default function SnowCanvas() {
       _ctx2.translate(s.x, s.y);
       try {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        _ctx2.rotate(
-          50 * ((s as any).t?.progress ? (s as any).t.progress() : 0)
-        );
+        const t = (s as any).t;
+        let prog = 0;
+        if (t && typeof t.progress === "function") {
+          try {
+            prog = t.progress();
+          } catch {}
+        }
+        _ctx2.rotate(50 * prog);
       } catch {
         /* progress may not be available during cleanup */
       }
@@ -196,7 +201,7 @@ export default function SnowCanvas() {
   }, []);
 
   return (
-    <div className={styles.fixedBg} aria-hidden>
+    <div className={styles.fixedBg} aria-hidden={true}>
       <canvas
         ref={c2Ref}
         id="c2"

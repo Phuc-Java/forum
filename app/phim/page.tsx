@@ -1,5 +1,5 @@
 import styles from "../giang-sinh/page.module.css";
-import FilmScanner from "./FilmScanner.client";
+import FilmScanner from "./FilmScannerSimple.client";
 
 export default function PhimPage() {
   return (
