@@ -228,6 +228,51 @@ export default function Navbar() {
                 )}
               </span>
             </Link>
+            <Link
+              href="/test"
+              className={`font-mono text-sm transition-all duration-300 relative hover:scale-105 ${
+                pathname === "/test"
+                  ? "text-primary"
+                  : "text-foreground/70 hover:text-primary"
+              }`}
+            >
+              <span className="relative">
+                Test
+                {pathname === "/test" && (
+                  <span className="absolute -bottom-1 left-0 right-0 h-0.5 bg-primary animate-fade-in rounded-full"></span>
+                )}
+              </span>
+            </Link>
+            <Link
+              href="/giang-sinh"
+              className={`font-mono text-sm transition-all duration-300 relative hover:scale-105 ${
+                pathname === "/giang-sinh"
+                  ? "text-primary"
+                  : "text-foreground/70 hover:text-primary"
+              }`}
+            >
+              <span className="relative">
+                Giáng sinh
+                {pathname === "/giang-sinh" && (
+                  <span className="absolute -bottom-1 left-0 right-0 h-0.5 bg-primary animate-fade-in rounded-full"></span>
+                )}
+              </span>
+            </Link>
+            <Link
+              href="/phim"
+              className={`font-mono text-sm transition-all duration-300 relative hover:scale-105 ${
+                pathname === "/phim"
+                  ? "text-primary"
+                  : "text-foreground/70 hover:text-primary"
+              }`}
+            >
+              <span className="relative">
+                Phim
+                {pathname === "/phim" && (
+                  <span className="absolute -bottom-1 left-0 right-0 h-0.5 bg-primary animate-fade-in rounded-full"></span>
+                )}
+              </span>
+            </Link>
           </div>
 
           {/* Auth Section */}

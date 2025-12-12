@@ -1,0 +1,634 @@
+:root {
+  --card-height: 300px;
+  --card-width: calc(var(--card-height) / 1.5);
+}
+
+/* Styled section header for pages like /phim */
+.sectionHeader {
+  width: 100%;
+  max-width: 1200px;
+  margin: 18px auto 8px;
+  padding: 14px 18px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 14px;
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.02),
+    rgba(255, 255, 255, 0.01)
+  );
+  box-shadow: 0 10px 40px rgba(2, 6, 12, 0.6),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.02);
+  position: relative;
+  color: #fff;
+  z-index: 20;
+  border: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.sectionHeader::before {
+  content: "";
+  position: absolute;
+  left: 12px;
+  right: 12px;
+  top: -6px;
+  height: 2px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(8, 255, 190, 0.12),
+    transparent
+  );
+  filter: blur(6px);
+  opacity: 0.95;
+}
+
+.sectionHeaderLeft {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.sectionHeaderIcon {
+  width: 48px;
+  height: 48px;
+  border-radius: 10px;
+  display: grid;
+  place-items: center;
+  font-size: 22px;
+  background: linear-gradient(135deg, #052428, #01313a);
+  color: #9fffe6;
+  box-shadow: 0 8px 28px rgba(2, 6, 12, 0.6),
+    0 0 18px rgba(6, 210, 160, 0.06) inset;
+}
+
+.sectionHeaderTitle {
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: 0.6px;
+  line-height: 1;
+  background: linear-gradient(90deg, #9bf6ff, #b28cff);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  text-shadow: 0 6px 18px rgba(0, 0, 0, 0.6);
+}
+
+.sectionHeaderSubtitle {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.72);
+  margin-top: 4px;
+}
+
+/* Right side controls for header */
+.sectionHeaderRight {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.sectionHeaderBadge {
+  padding: 6px 10px;
+  font-weight: 800;
+  font-size: 13px;
+  border-radius: 999px;
+  color: #052a26;
+  background: linear-gradient(90deg, #7af7d8, #9ef3ff);
+  box-shadow: 0 8px 30px rgba(6, 200, 160, 0.06),
+    inset 0 -2px 6px rgba(255, 255, 255, 0.06);
+  transform-origin: center;
+  animation: badgePop 900ms cubic-bezier(0.2, 0.9, 0.2, 1) both;
+}
+
+.sectionHeaderCTA {
+  padding: 8px 12px;
+  border-radius: 10px;
+  color: rgba(255, 255, 255, 0.92);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.02),
+    rgba(255, 255, 255, 0.01)
+  );
+  text-decoration: none;
+  font-weight: 700;
+  transition: transform 0.18s ease, box-shadow 0.18s ease,
+    border-color 0.18s ease;
+  backdrop-filter: blur(6px);
+}
+.sectionHeaderCTA:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 16px 36px rgba(8, 255, 190, 0.06);
+  border-color: rgba(8, 255, 190, 0.12);
+}
+
+/* title gradient animation + sparkle */
+.sectionHeaderTitle {
+  background-size: 200% 100%;
+  animation: gradientShift 6s linear infinite;
+  position: relative;
+}
+.sectionHeaderTitle::after {
+  content: "";
+  position: absolute;
+  left: -20%;
+  top: 0;
+  width: 40%;
+  height: 100%;
+  transform: skewX(-12deg);
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0),
+    rgba(255, 255, 255, 0.18),
+    rgba(255, 255, 255, 0)
+  );
+  filter: blur(8px);
+  opacity: 0;
+  animation: titleGlint 3.6s ease-in-out infinite;
+}
+
+@keyframes gradientShift {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+@keyframes titleGlint {
+  0% {
+    left: -40%;
+    opacity: 0;
+  }
+  45% {
+    opacity: 0;
+  }
+  50% {
+    left: 120%;
+    opacity: 0.9;
+  }
+  80% {
+    opacity: 0;
+  }
+  100% {
+    left: 140%;
+    opacity: 0;
+  }
+}
+
+@keyframes badgePop {
+  0% {
+    transform: scale(0.85);
+    opacity: 0;
+  }
+  60% {
+    transform: scale(1.06);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+/* icon subtle float */
+.sectionHeaderIcon {
+  animation: iconFloat 3.6s ease-in-out infinite;
+}
+@keyframes iconFloat {
+  0% {
+    transform: translateY(0) rotate(0deg);
+  }
+  50% {
+    transform: translateY(-6px) rotate(-6deg);
+  }
+  100% {
+    transform: translateY(0) rotate(0deg);
+  }
+}
+
+.page {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 60vh;
+  padding: 40px 20px;
+  background: transparent;
+}
+
+.cardsContainer {
+  /* 4 columns x auto rows grid: 4 on top, 4 below */
+  display: grid;
+  grid-template-columns: repeat(4, var(--card-width));
+  grid-auto-rows: var(--card-height);
+  gap: 40px;
+  justify-content: center;
+  align-items: start;
+  padding: 40px 0;
+}
+
+/* Shift cards to the right so central tree particles don't cover them */
+
+.card {
+  width: var(--card-width);
+  height: var(--card-height);
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
+  padding: 0 36px;
+  perspective: 2500px;
+  margin: 0 50px;
+}
+
+.coverImage {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.wrapper {
+  transition: all 0.5s;
+  position: absolute;
+  width: 100%;
+  z-index: -1;
+}
+
+.card:hover .wrapper {
+  transform: perspective(900px) translateY(-5%) rotateX(25deg) translateZ(0);
+  box-shadow: 2px 35px 32px -8px rgba(0, 0, 0, 0.75);
+  -webkit-box-shadow: 2px 35px 32px -8px rgba(0, 0, 0, 0.75);
+  -moz-box-shadow: 2px 35px 32px -8px rgba(0, 0, 0, 0.75);
+}
+
+.wrapper::before,
+.wrapper::after {
+  content: "";
+  opacity: 0;
+  width: 100%;
+  height: 80px;
+  transition: all 0.5s;
+  position: absolute;
+  left: 0;
+}
+.wrapper::before {
+  top: 0;
+  height: 100%;
+  background-image: linear-gradient(
+    to top,
+    transparent 46%,
+    rgba(12, 13, 19, 0.5) 68%,
+    rgba(12, 13, 19) 97%
+  );
+}
+.wrapper::after {
+  bottom: 0;
+  opacity: 1;
+  background-image: linear-gradient(
+    to bottom,
+    transparent 46%,
+    rgba(12, 13, 19, 0.5) 68%,
+    rgba(12, 13, 19) 97%
+  );
+}
+
+.card:hover .wrapper::before,
+.wrapper::after {
+  opacity: 1;
+}
+
+.card:hover .wrapper::after {
+  height: 120px;
+}
+
+.title {
+  width: 100%;
+  transition: transform 0.5s;
+}
+.card:hover .title {
+  transform: translate3d(0%, -50px, 100px);
+}
+
+.character {
+  width: 100%;
+  opacity: 0;
+  transition: all 0.5s;
+  position: absolute;
+  z-index: -1;
+}
+
+.card:hover .character {
+  opacity: 1;
+  transform: translate3d(0%, -30%, 100px);
+}
+
+/* Title overlay box */
+.cardTitleBox {
+  position: absolute;
+  left: 12px;
+  right: 12px;
+  bottom: 12px;
+  padding: 10px 14px;
+  border-radius: 10px;
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0.18), rgba(0, 0, 0, 0.45));
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(6px) saturate(120%);
+  z-index: 3;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.45);
+}
+
+.cardTitle {
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: 0.2px;
+  text-align: center;
+}
+
+.card:hover {
+  transform: translateY(-6px) scale(1.02);
+  box-shadow: 0 18px 48px rgba(2, 6, 12, 0.75);
+  z-index: 30;
+}
+
+.coverImage {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+}
+
+/* Fixed background canvas for snow/tree effect */
+.fixedBg {
+  position: fixed;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 100vw;
+  height: 100vh;
+  pointer-events: none; /* allow clicks through */
+  z-index: 0;
+}
+
+.canvas {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  aspect-ratio: 1;
+  pointer-events: auto; /* allow pointer events for interactivity */
+}
+
+.canvasMain {
+  width: auto;
+  height: 100%;
+}
+
+.canvasTop {
+  width: 100%;
+  height: auto;
+}
+
+@media (max-aspect-ratio: 1) {
+  .canvasMain {
+    width: 100%;
+    height: auto;
+  }
+  .canvasTop {
+    width: auto;
+    height: 100%;
+  }
+}
+
+/* Responsive grid: 3, 2, then 1 column */
+@media (max-width: 1400px) {
+  .cardsContainer {
+    grid-template-columns: repeat(3, calc(var(--card-width) * 0.9));
+    gap: 28px;
+  }
+}
+
+@media (max-width: 1000px) {
+  .cardsContainer {
+    grid-template-columns: repeat(2, calc(var(--card-width) * 0.8));
+    gap: 20px;
+  }
+}
+
+@media (max-width: 640px) {
+  .cardsContainer {
+    grid-template-columns: 1fr;
+    grid-auto-rows: auto;
+    gap: 18px;
+    padding: 20px 12px;
+  }
+  .card {
+    width: 100%;
+    height: auto;
+  }
+  .coverImage {
+    height: 420px;
+    object-fit: cover;
+  }
+}
+
+/* Ensure page content sits above the canvas */
+.page {
+  z-index: 10;
+  position: relative;
+}
+
+/* Greeting card (top-right) */
+.greetingWrap {
+  position: fixed;
+  top: 72px; /* drop below the site navbar */
+  right: 12px; /* sit close to the edge */
+  z-index: 9999; /* ensure it sits above header/ui */
+  display: flex;
+  flex-direction: column; /* stack: gift -> mini boxes -> card */
+  align-items: flex-end;
+  gap: 8px;
+}
+
+.greetingButton {
+  width: 56px;
+  height: 56px;
+  border-radius: 12px;
+  background: linear-gradient(
+    180deg,
+    rgba(255, 225, 235, 0.98),
+    rgba(255, 215, 230, 0.98)
+  );
+  display: inline-grid;
+  place-items: center;
+  box-shadow: 0 8px 24px rgba(8, 16, 26, 0.6),
+    inset 0 -4px 10px rgba(0, 0, 0, 0.12);
+  transition: transform 240ms cubic-bezier(0.2, 0.9, 0.2, 1),
+    box-shadow 240ms ease, filter 240ms ease;
+  animation: floatY 4s ease-in-out infinite;
+}
+.greetingButton:hover {
+  transform: translateY(-6px) scale(1.04);
+  box-shadow: 0 22px 48px rgba(8, 16, 26, 0.75);
+}
+
+@keyframes floatY {
+  0% {
+    transform: translateY(0) scale(1);
+  }
+  50% {
+    transform: translateY(-6px) scale(1.01);
+  }
+  100% {
+    transform: translateY(0) scale(1);
+  }
+}
+
+.greetingCard {
+  width: 320px;
+  max-width: calc(100vw - 48px);
+  background: linear-gradient(
+    180deg,
+    rgba(10, 12, 16, 0.88),
+    rgba(6, 8, 12, 0.9)
+  );
+  border-radius: 14px;
+  color: #fff;
+  box-shadow: 0 24px 80px rgba(2, 6, 12, 0.6),
+    inset 0 1px 0 rgba(255, 255, 255, 0.02);
+  transform-origin: top right;
+  transform: translateY(8px) scale(0.985) rotateX(2deg);
+  opacity: 0;
+  pointer-events: none;
+  transition: transform 360ms cubic-bezier(0.2, 0.9, 0.25, 1),
+    opacity 260ms ease, box-shadow 260ms ease;
+  overflow: hidden;
+  margin-top: 8px; /* separate from gift */
+}
+
+/* Keep greeting card visually consistent regardless of text length */
+.greetingCard {
+  display: flex;
+  flex-direction: column;
+  min-height: 320px; /* keeps the box from collapsing when text is short */
+}
+.greetingCard.open {
+  transform: translateY(0) scale(1) rotateX(0deg);
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.greetingHeader {
+  padding: 14px 18px;
+  font-weight: 700;
+  font-size: 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+}
+.greetingBody {
+  padding: 16px 18px;
+  font-size: 14px;
+  line-height: 1.45;
+  color: rgba(255, 255, 255, 0.94); /* visible on dark background */
+  min-height: 88px;
+  max-height: 220px;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Allow the body to grow and scroll inside the fixed card height */
+.greetingBody {
+  flex: 1 1 auto;
+  min-height: 140px;
+}
+.greetingActions {
+  display: flex;
+  justify-content: flex-end;
+  padding: 12px 14px 16px 14px;
+}
+.greetingClose {
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.06),
+    rgba(255, 255, 255, 0.02)
+  );
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  color: #fff;
+  padding: 8px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+/* mini pink boxes under gift */
+.miniBoxContainer {
+  display: flex;
+  gap: 8px;
+  flex-direction: column;
+  align-items: center;
+}
+.miniBox {
+  width: 36px;
+  height: 28px;
+  border-radius: 8px;
+  background: linear-gradient(180deg, #ff86c2, #ff5fa8);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  cursor: pointer;
+  box-shadow: 0 6px 18px rgba(255, 95, 168, 0.12);
+}
+.selectedMini {
+  outline: 3px solid rgba(255, 255, 255, 0.08);
+  transform: translateY(-4px) scale(1.03);
+}
+
+.greetingNav {
+  background: rgba(255, 255, 255, 0.03);
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  width: 40px;
+  height: 40px;
+  display: inline-grid;
+  place-items: center;
+  padding: 0;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: transform 160ms ease, background 160ms ease, box-shadow 160ms ease;
+}
+.greetingNav:hover {
+  transform: translateY(-3px) scale(1.03);
+  box-shadow: 0 10px 28px rgba(2, 6, 12, 0.45);
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.greetingHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.greetingHeader h3,
+.greetingHeader {
+  color: #ff79b0; /* pink title */
+  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.4);
+}
+.greetingCounter {
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.6);
+  font-weight: 600;
+  margin-left: 12px;
+}
+
+@media (max-width: 720px) {
+  .greetingCard {
+    width: 90vw;
+  }
+  .greetingButton {
+    width: 48px;
+    height: 48px;
+  }
+}
