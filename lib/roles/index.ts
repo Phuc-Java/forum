@@ -420,7 +420,10 @@ export function hasPermission(
   customPermissions?: string | null
 ): boolean {
   const permissions = getPermissions(roleId, customPermissions);
-  return permissions[permission];
+  // permissions[permission] can be `boolean | undefined` because some permissions
+  // are optional in `RolePermissions` (e.g. `canUseAI`). Ensure we always return
+  // a boolean for TypeScript and predictable behavior by falling back to false.
+  return permissions[permission] ?? false;
 }
 
 /**
