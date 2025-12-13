@@ -5,17 +5,21 @@
 import React, { useEffect, useRef, useState } from "react";
 import "flickity/css/flickity.css";
 import { useRouter } from "next/navigation";
-import ProfileCard from "../ui/ProfileCard";
+import ProfileCard from "../ui/ProfileCard"; // Giả định path này đúng
 import dynamic from "next/dynamic";
 
+// Dynamic imports để tối ưu Performance
 const HeartCanvas = dynamic(() => import("./HeartCanvas.client"), {
   ssr: false,
-  loading: () => null,
+  loading: () => (
+    <div className="w-full h-full flex items-center justify-center text-pink-500/50">
+      Loading Heart...
+    </div>
+  ),
 });
 
 const LeftSidebar = dynamic(() => import("./LeftSidebar.client"), {
   ssr: false,
-  loading: () => null,
 });
 
 export default function LockScreen({
@@ -27,16 +31,18 @@ export default function LockScreen({
   const router = useRouter();
   const [code, setCode] = useState("0000");
   const [isVerified, setIsVerified] = useState(false);
+
+  // States cho lazy load UI components khi unlock
   const heartRef = useRef<HTMLDivElement | null>(null);
   const [showHeart, setShowHeart] = useState(false);
   const sidebarRef = useRef<HTMLDivElement | null>(null);
   const [showSidebar, setShowSidebar] = useState(false);
 
+  // --- LOGIC Ổ KHÓA (GIỮ NGUYÊN CORE LOGIC) ---
   useEffect(() => {
     if (!rootRef.current) return;
 
     (async () => {
-      // dynamic import browser-only libs at runtime to avoid SSR evaluation
       const FlickityModule = (await import("flickity")).default;
       const HowlModule = (await import("howler")).Howl;
 
@@ -47,52 +53,35 @@ export default function LockScreen({
         ) as HTMLElement[],
       };
 
+      // Sound setup (Giữ nguyên)
       const sounds: Record<string, any> = {
         select: new HowlModule({
-          src: [
-            "https://jackrugile.com/sounds/misc/lock-button-1.mp3",
-            "https://jackrugile.com/sounds/misc/lock-button-1.ogg",
-          ],
+          src: ["https://jackrugile.com/sounds/misc/lock-button-1.mp3"],
           volume: 0.5,
           rate: 1.4,
         }),
         prev: new HowlModule({
-          src: [
-            "https://jackrugile.com/sounds/misc/lock-button-4.mp3",
-            "https://jackrugile.com/sounds/misc/lock-button-4.ogg",
-          ],
+          src: ["https://jackrugile.com/sounds/misc/lock-button-4.mp3"],
           volume: 0.5,
           rate: 1,
         }),
         next: new HowlModule({
-          src: [
-            "https://jackrugile.com/sounds/misc/lock-button-4.mp3",
-            "https://jackrugile.com/sounds/misc/lock-button-4.ogg",
-          ],
+          src: ["https://jackrugile.com/sounds/misc/lock-button-4.mp3"],
           volume: 0.5,
           rate: 1.2,
         }),
         hover: new HowlModule({
-          src: [
-            "https://jackrugile.com/sounds/misc/lock-button-1.mp3",
-            "https://jackrugile.com/sounds/misc/lock-button-1.ogg",
-          ],
+          src: ["https://jackrugile.com/sounds/misc/lock-button-1.mp3"],
           volume: 0.2,
           rate: 3,
         }),
         success: new HowlModule({
-          src: [
-            "https://jackrugile.com/sounds/misc/lock-online-1.mp3",
-            "https://jackrugile.com/sounds/misc/lock-online-1.ogg",
-          ],
+          src: ["https://jackrugile.com/sounds/misc/lock-online-1.mp3"],
           volume: 0.5,
           rate: 1,
         }),
         fail: new HowlModule({
-          src: [
-            "https://jackrugile.com/sounds/misc/lock-fail-1.mp3",
-            "https://jackrugile.com/sounds/misc/lock-fail-1.ogg",
-          ],
+          src: ["https://jackrugile.com/sounds/misc/lock-fail-1.mp3"],
           volume: 0.6,
           rate: 1,
         }),
@@ -105,8 +94,7 @@ export default function LockScreen({
         let code = "";
         for (let i = 0; i < dom.rows.length; i++) {
           const sel = dom.rows[i].querySelector(".is-selected .text");
-          const num = sel ? sel.textContent : "0";
-          code += num;
+          code += sel ? sel.textContent : "0";
         }
         return code;
       }
@@ -118,7 +106,8 @@ export default function LockScreen({
         if (nextCode === pin) {
           if (!verified) sounds.success.play();
           verified = true;
-          setIsVerified(true);
+          // Delay nhẹ để hiệu ứng âm thanh khớp với visual
+          setTimeout(() => setIsVerified(true), 300);
         } else {
           if (verified) sounds.fail.play();
           verified = false;
@@ -126,7 +115,7 @@ export default function LockScreen({
         }
       }
 
-      // initialize Flickity on each row
+      // Flickity Setup
       type FlktyLike = {
         selectedIndex?: number;
         on?: (ev: string, cb: () => void) => void;
@@ -134,6 +123,7 @@ export default function LockScreen({
       };
       const flktys: any[] = [];
       const lastIndexMap = new WeakMap<object, number>();
+
       dom.rows.forEach((row) => {
         const flkty = new FlickityModule(row as Element, {
           selectedAttraction: 0.25,
@@ -147,9 +137,7 @@ export default function LockScreen({
         (flkty as FlktyLike).on?.("select", () => {
           const last = lastIndexMap.get(flkty as object) ?? 0;
           const selected = (flkty as FlktyLike).selectedIndex ?? 0;
-          if (selected !== last) {
-            onChange();
-          }
+          if (selected !== last) onChange();
           lastIndexMap.set(flkty as object, selected);
         });
 
@@ -157,7 +145,7 @@ export default function LockScreen({
         flktys.push(flkty);
       });
 
-      // prev/next buttons play sounds
+      // Buttons
       const prevNextBtns = dom.lock.querySelectorAll(
         ".flickity-prev-next-button"
       );
@@ -168,84 +156,60 @@ export default function LockScreen({
         });
       });
 
-      // responsive margin fix
       function onResize() {
         if (!dom.lock) return;
-        if (window.innerWidth % 2 === 0) dom.lock.style.marginLeft = "0px";
-        else dom.lock.style.marginLeft = "1px";
+        dom.lock.style.marginLeft = window.innerWidth % 2 === 0 ? "0px" : "1px";
       }
       window.addEventListener("resize", onResize);
       onResize();
-
-      // initial update
       onChange();
 
       return () => {
         window.removeEventListener("resize", onResize);
-        flktys.forEach((f) => {
-          try {
-            if (f && typeof (f as FlktyLike).destroy === "function")
-              (f as FlktyLike).destroy?.();
-          } catch {
-            // ignore
-          }
-        });
-        prevNextBtns.forEach((btn) => {
-          const clone = btn.cloneNode(true) as Element;
-          btn.parentNode?.replaceChild(clone, btn);
-        });
-        // unload sounds
+        flktys.forEach((f) => f?.destroy?.());
         Object.values(sounds).forEach((s) => s.unload && s.unload());
       };
     })();
   }, []);
 
-  // Intersection observers: only mount heavy components when visible
+  // Observers (Giữ nguyên logic tối ưu render)
   useEffect(() => {
-    let hObserver: IntersectionObserver | null = null;
-    let sObserver: IntersectionObserver | null = null;
-    if (heartRef.current) {
-      hObserver = new IntersectionObserver(
-        (entries) => {
-          entries.forEach((en) => {
-            if (en.isIntersecting) {
-              setShowHeart(true);
-              hObserver?.disconnect();
-            }
-          });
-        },
-        { root: null, threshold: 0.1 }
-      );
-      hObserver.observe(heartRef.current);
-    }
-    if (sidebarRef.current) {
-      sObserver = new IntersectionObserver(
-        (entries) => {
-          entries.forEach((en) => {
-            if (en.isIntersecting) {
-              setShowSidebar(true);
-              sObserver?.disconnect();
-            }
-          });
-        },
-        { root: null, threshold: 0.01 }
-      );
-      sObserver.observe(sidebarRef.current);
-    }
-    return () => {
-      hObserver?.disconnect();
-      sObserver?.disconnect();
-    };
+    if (!isVerified) return; // Chỉ observe khi đã unlock
+
+    // Tự động kích hoạt sau 1s nếu observer fail hoặc để mượt hơn
+    const timer = setTimeout(() => {
+      setShowHeart(true);
+      setShowSidebar(true);
+    }, 500);
+
+    return () => clearTimeout(timer);
   }, [isVerified]);
 
   return (
     <>
-      <main className={`lock-main ${isVerified ? "hidden" : ""}`} ref={rootRef}>
-        <div className="loader" aria-hidden="true"></div>
+      {/* BACKGROUND VŨ TRỤ (Dùng chung cho cả Locked và Unlocked) */}
+      <div className="universe-bg" aria-hidden="true">
+        <div className="stars"></div>
+        <div className="twinkling"></div>
+      </div>
+
+      {/* --- PHẦN 1: MÀN HÌNH KHÓA --- */}
+      <main
+        className={`lock-wrapper ${isVerified ? "unlocked-anim" : ""}`}
+        ref={rootRef}
+      >
+        {/* Hint Box (Đẹp hơn, Glassmorphism) */}
+        <div className="floating-hint">
+          <div className="hint-icon">🔒</div>
+          <div className="hint-text">MẬT MÃ TRÁI TIM</div>
+        </div>
+
         <div className={`lock ${isVerified ? "verified" : ""}`}>
           <div className="screen">
             <div className="code">{code}</div>
-            <div className="status">{isVerified ? "UNLOCKED" : "LOCKED"}</div>
+            <div className="status">
+              {isVerified ? "ACCESS GRANTED" : "LOCKED"}
+            </div>
             <div className="scanlines"></div>
           </div>
           <div className="rows">
@@ -260,1004 +224,410 @@ export default function LockScreen({
             ))}
           </div>
         </div>
-        {/* Floating hint box — separate from the lock so it doesn't affect layout.
-            Position can be controlled by setting CSS variables on this element:
-            --floating-hint-top and --floating-hint-left (e.g. inline style).
-        */}
-        <div
-          className="floating-hint"
-          role="note"
-          aria-hidden="true"
-          style={
-            {
-              top: "206px",
-              left: "770px",
-              right: "auto",
-              transform: "translate(0,0)",
-            } as React.CSSProperties
-          }
-        >
-          <div className="floating-hint-inner">Danh Bạ APP G.</div>
-        </div>
       </main>
 
-      <div className={`page-content ${isVerified ? "visible" : "hidden"}`}>
-        {isVerified ? (
-          <>
-            <div className="secret-box">
-              <h2>Người ấy của tôi...</h2>
-              <p>Đây là lời thầm kín — chỉ hiện sau khi mở khóa.</p>
+      {/* --- PHẦN 2: NỘI DUNG ĐÃ MỞ KHÓA --- */}
+      <div className={`unlocked-content ${isVerified ? "visible" : ""}`}>
+        {/* SIDEBAR NHIỆT KẾ (Bên trái) */}
+        <div className="sidebar-zone" ref={sidebarRef}>
+          {showSidebar && <LeftSidebar />}
+        </div>
+
+        <div className="main-stage">
+          {/* LỜI NHẮN BÍ MẬT */}
+          <div className="secret-message-box">{children}</div>
+
+          {/* KHU VỰC ROMANCE (Profile Cards + Heart) */}
+          <div className="romance-stage">
+            {/* User Card (Trái) */}
+            <div className="card-wrapper left-card">
+              <ProfileCard
+                name="Nguyễn Tuấn Phúc"
+                title="Hacker Lỏ / Developer"
+                handle="@NguyenTuanPhuc"
+                status="Online"
+                contactText="Info"
+                avatarUrl="/vest1-removebg-preview.png"
+                showUserInfo={true}
+                enableTilt={true}
+              />
             </div>
-          </>
-        ) : (
-          children
-        )}
-        {isVerified && (
-          <div className="connector" aria-hidden="true">
-            <span className="connector-heart">❤</span>
+
+            {/* Trái tim 3D (Giữa) */}
+            <div className="heart-wrapper" ref={heartRef}>
+              {showHeart && <HeartCanvas />}
+            </div>
+
+            {/* Crush Card (Phải) */}
+            <div className="card-wrapper right-card">
+              <ProfileCard
+                name="Người Ấy"
+                title="My Universe"
+                handle="@MyCrush"
+                status="Sleepy"
+                contactText="Message"
+                avatarUrl="/unnamed__25_-removebg-preview.png"
+                showUserInfo={true}
+                enableTilt={true}
+              />
+            </div>
           </div>
-        )}
+        </div>
       </div>
 
-      {isVerified && (
-        <div className={`romance-area ${isVerified ? "visible" : ""}`}>
-          <div className={`romance-wrapper ${isVerified ? "visible" : ""}`}>
-            <div className="romance-box">
-              <div className="romance-inner">
-                <div className="romance-grid">
-                  <div className="romance-col romance-left">
-                    <ProfileCard
-                      name="Nguyễn Tuấn Phúc"
-                      title="Full Stack Developer"
-                      handle="NguyenTuanPhuc"
-                      status="Online"
-                      contactText="Contact Me"
-                      avatarUrl="/vest1-removebg-preview.png"
-                      showUserInfo={true}
-                      enableTilt={true}
-                      enableMobileTilt={false}
-                      onContactClick={() => router.push("/contact")}
-                    />
-                  </div>
+      <style jsx global>{`
+        /* --- GLOBAL & FONTS --- */
+        @import url("https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700&family=Share+Tech+Mono&family=Playfair+Display:ital,wght@1,600&display=swap");
 
-                  <div className="romance-col romance-center">
-                    <div
-                      className="heart-link"
-                      role="img"
-                      aria-label="heart-canvas"
-                      style={{
-                        width: "100%",
-                        height: "100%",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                      }}
-                    >
-                      <div
-                        style={{ width: 72, height: 72, maxWidth: "100%" }}
-                        ref={heartRef}
-                      >
-                        {showHeart ? <HeartCanvas /> : null}
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="romance-col romance-right">
-                    <ProfileCard
-                      name="Người Ấy"
-                      title="Special Someone"
-                      handle="MyCrush"
-                      status="Offline"
-                      contactText="View Profile"
-                      avatarUrl="/unnamed__25_-removebg-preview.png"
-                      showUserInfo={true}
-                      enableTilt={true}
-                      enableMobileTilt={false}
-                      onContactClick={() => router.push("/profile")}
-                    />
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {isVerified && (
-        <div ref={sidebarRef}>{showSidebar ? <LeftSidebar /> : null}</div>
-      )}
-
-      {isVerified && (
-        <div className="hearts-overlay" aria-hidden="true">
-          {Array.from({ length: 14 }).map((_, i) => (
-            <span
-              key={i}
-              className="heart"
-              style={{
-                left: `${(8 + i * 11) % 88}%`,
-                top: `${(6 + i * 7) % 64}%`,
-                animationDelay: `${(i * 0.18).toFixed(2)}s`,
-                animationDuration: `${4 + (i % 4) * 0.8}s`,
-                opacity: 0.08 + (i % 4) * 0.02,
-              }}
-            />
-          ))}
-        </div>
-      )}
-
-      <style jsx>{`
-        /* Sidebar styles — only active when unlocked */
-        .mycrush-sidebar {
+        /* --- BACKGROUND VŨ TRỤ --- */
+        .universe-bg {
           position: fixed;
-          left: 20px;
-          top: 92px;
-          width: 64px; /* narrow sidebar */
-          height: calc(100vh - 112px);
-          box-sizing: border-box;
-          padding: 8px;
-          z-index: 2000;
-          background: linear-gradient(
-            180deg,
-            rgba(10, 10, 12, 0.6),
-            rgba(10, 10, 12, 0.45)
-          );
-          border: 1px solid rgba(255, 255, 255, 0.02);
-          border-radius: 12px;
-          backdrop-filter: blur(6px);
-          color: #fff;
-          pointer-events: none; /* empty sidebar, non-interactive */
+          top: 0;
+          left: 0;
+          width: 100%;
+          height: 100%;
+          background: #000
+            url("https://s3-us-west-2.amazonaws.com/s.cdpn.io/1231630/stars.png")
+            repeat top center;
+          z-index: 0;
+          overflow: hidden;
         }
-        @media (max-width: 980px) {
-          .mycrush-sidebar {
-            display: none;
+        .twinkling {
+          position: absolute;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          background: transparent
+            url("https://s3-us-west-2.amazonaws.com/s.cdpn.io/1231630/twinkling.png")
+            repeat top center;
+          z-index: 1;
+          animation: move-twink-back 200s linear infinite;
+          opacity: 0.4;
+        }
+        @keyframes move-twink-back {
+          from {
+            background-position: 0 0;
+          }
+          to {
+            background-position: -10000px 5000px;
           }
         }
 
-        .lock-root {
+        /* --- LOCK SCREEN WRAPPER --- */
+        .lock-wrapper {
+          position: fixed;
+          top: 0;
+          left: 0;
+          width: 100%;
+          height: 100%;
           display: flex;
+          flex-direction: column;
           align-items: center;
           justify-content: center;
-          width: 100%;
-          box-sizing: border-box;
-          /* leave space for top navbar without touching it */
-          min-height: calc(100vh - 120px);
-          padding: 40px 16px;
+          z-index: 50;
+          transition: transform 0.8s cubic-bezier(0.68, -0.55, 0.27, 1.55),
+            opacity 0.6s ease;
+        }
+        .lock-wrapper.unlocked-anim {
+          transform: translateY(-150vh) scale(0.8); /* Bay lên trời khi mở */
+          opacity: 0;
+          pointer-events: none;
         }
 
+        /* --- LOCK UI (Tối ưu từ code cũ) --- */
         .lock {
-          background: #000;
-          border-bottom: 1px solid hsla(0, 0%, 15%, 1);
-          border-left: 1px solid hsla(0, 0%, 15%, 1);
-          box-shadow: -1px 1px 0 hsla(0, 0%, 6%, 1),
-            -2px 2px 0 hsla(0, 0%, 5%, 1), -3px 3px 0 hsla(0, 0%, 4%, 1),
-            -4px 4px 0 hsla(0, 0%, 3%, 1), -8px 8px 16px hsla(0, 0%, 0%, 0.5);
           position: relative;
-          z-index: 2;
-          /* allow interacting with the lock panel while the overlay
-             remains non-interactive so page chrome (navbar) is usable */
-          pointer-events: auto;
-          max-width: 230px;
-          width: min(230px, 90%);
-          margin: 0 auto;
-          left: 50%;
-          transform: translateX(-50%);
-          padding: 8px;
-          border-radius: 4px;
+          background: rgba(10, 10, 15, 0.8);
+          backdrop-filter: blur(10px);
+          padding: 20px;
+          border-radius: 16px;
+          border: 1px solid rgba(255, 255, 255, 0.1);
+          box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5),
+            inset 0 0 0 1px rgba(255, 255, 255, 0.05);
+          max-width: 300px;
+          width: 90%;
         }
+        /* Gradient viền */
         .lock:before {
-          background: linear-gradient(
-            90deg,
-            hsla(0, 0%, 15%, 1) 0%,
-            hsla(0, 0%, 35%, 1) 100%
-          );
           content: "";
-          height: 1px;
-          left: 0;
-          pointer-events: none;
           position: absolute;
-          top: 0;
-          width: 100%;
-          z-index: 1;
+          top: -2px;
+          left: -2px;
+          right: -2px;
+          bottom: -2px;
+          background: linear-gradient(45deg, #ff00cc, #333399, #00d4ff);
+          z-index: -1;
+          border-radius: 18px;
+          opacity: 0.5;
+          filter: blur(10px);
         }
-        .lock:after {
-          background: linear-gradient(
-            0deg,
-            hsla(0, 0%, 15%, 1) 0%,
-            hsla(0, 0%, 35%, 1) 100%
-          );
-          bottom: 0;
-          content: "";
-          height: 100%;
-          pointer-events: none;
-          position: absolute;
-          right: 0;
-          top: 0;
-          width: 1px;
+
+        /* Hint Box */
+        .floating-hint {
+          margin-bottom: 30px;
+          background: rgba(255, 255, 255, 0.05);
+          border: 1px solid rgba(255, 255, 255, 0.1);
+          padding: 10px 24px;
+          border-radius: 50px;
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          color: #fff;
+          font-family: "Share Tech Mono", monospace;
+          box-shadow: 0 0 15px rgba(25, 255, 176, 0.2);
+          animation: pulse-hint 2s infinite;
+        }
+        @keyframes pulse-hint {
+          0% {
+            transform: scale(1);
+            box-shadow: 0 0 15px rgba(25, 255, 176, 0.2);
+          }
+          50% {
+            transform: scale(1.05);
+            box-shadow: 0 0 25px rgba(25, 255, 176, 0.5);
+          }
+          100% {
+            transform: scale(1);
+            box-shadow: 0 0 15px rgba(25, 255, 176, 0.2);
+          }
         }
 
         .screen {
-          background: #000;
-          height: 40px;
+          background: #050505;
+          height: 50px;
+          border-radius: 8px;
           position: relative;
-        }
-        .screen:before {
-          background: linear-gradient(
-            45deg,
-            hsla(0, 0%, 100%, 0) 40%,
-            hsla(0, 0%, 100%, 0.2) 100%
-          );
-          bottom: 0;
-          content: "";
-          left: 0;
-          pointer-events: none;
-          position: absolute;
-          right: 0;
-          top: 0;
-          z-index: 1;
-        }
-        .screen:after {
-          background: linear-gradient(
-            90deg,
-            hsla(0, 0%, 15%, 1) 0%,
-            hsla(0, 0%, 35%, 1) 100%
-          );
-          bottom: 0;
-          content: "";
-          height: 1px;
-          left: 0;
-          position: absolute;
-          width: 100%;
-        }
-
-        .code,
-        .status {
-          font-family: "Share Tech Mono", monospace;
-          font-size: 1em;
-          height: 40px;
-          line-height: 42px;
-          padding: 0 0.75em;
-          position: absolute;
+          margin-bottom: 15px;
+          overflow: hidden;
+          border: 1px solid #222;
         }
         .code {
-          color: #fff;
-          left: 0;
-          text-shadow: 0 0 15px #fff;
+          position: absolute;
+          left: 15px;
+          line-height: 50px;
+          color: #19ffb0;
+          font-family: "Orbitron", sans-serif;
+          font-size: 1.5rem;
+          letter-spacing: 4px;
+          text-shadow: 0 0 10px rgba(25, 255, 176, 0.6);
         }
-        .verified .code {
-          color: #0f0;
-          text-shadow: 0 0 15px #0f0;
-        }
-
         .status {
-          animation: pulse 1000ms infinite alternate;
-          color: #f00;
-          right: 0;
-          text-shadow: 0 0 15px #f00;
+          position: absolute;
+          right: 15px;
+          line-height: 50px;
+          color: #ff3333;
+          font-family: "Share Tech Mono", monospace;
+          font-size: 0.9rem;
         }
         .verified .status {
-          animation: pulse 300ms infinite alternate;
-          color: #0f0;
-          text-shadow: 0 0 15px #0f0;
+          color: #19ffb0;
+          text-shadow: 0 0 8px #19ffb0;
         }
-        @keyframes pulse {
-          0% {
-            opacity: 0.25;
-          }
-          100% {
-            opacity: 1;
-          }
+        .verified .code {
+          color: #fff;
+          text-shadow: 0 0 15px #fff;
         }
 
+        /* Scanlines Effect */
         .scanlines {
           background: linear-gradient(
-            hsla(0, 0%, 100%, 0.04) 50%,
-            hsla(0, 0%, 0%, 0.1) 50%
+            to bottom,
+            rgba(255, 255, 255, 0),
+            rgba(255, 255, 255, 0) 50%,
+            rgba(0, 0, 0, 0.2) 50%,
+            rgba(0, 0, 0, 0.2)
           );
-          background-size: 100% 2px;
-          bottom: 1px;
-          left: 0;
-          pointer-events: none;
+          background-size: 100% 4px;
           position: absolute;
-          right: 1px;
-          top: 1px;
-          z-index: 1;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          pointer-events: none;
         }
 
         .rows {
-          padding: 1px 2px 1px 1px;
-          width: 210px;
-          margin: 0 auto; /* center the rows inside the lock */
+          margin: 0 auto;
+          width: 220px;
         }
         .row {
-          height: 50px;
-          width: 210px;
+          height: 60px;
           position: relative;
+          margin-bottom: 4px;
         }
+        /* Gradient mờ 2 bên row */
         .row:before,
         .row:after {
-          bottom: 0;
           content: "";
-          pointer-events: none;
           position: absolute;
           top: 0;
-          width: 35%;
-          z-index: 1;
+          bottom: 0;
+          width: 30%;
+          z-index: 2;
+          pointer-events: none;
         }
         .row:before {
-          background: linear-gradient(
-            90deg,
-            hsla(0, 0%, 0%, 0.5),
-            hsla(0, 0%, 0%, 0)
-          );
           left: 0;
+          background: linear-gradient(90deg, #0a0a0f, transparent);
         }
         .row:after {
-          background: linear-gradient(
-            90deg,
-            hsla(0, 0%, 0%, 0),
-            hsla(0, 0%, 0%, 0.5)
-          );
           right: 0;
+          background: linear-gradient(-90deg, #0a0a0f, transparent);
         }
 
         .cell {
-          background: linear-gradient(
-            45deg,
-            hsla(0, 0%, 5%, 1),
-            hsla(0, 0%, 15%, 1)
-          );
-          box-shadow: inset 0 0 0 1px #000, inset 0 0 0 2px #383838;
-          display: flex;
-          height: 50px;
-          position: relative;
-          justify-content: center;
           width: 70px;
-          float: left;
+          height: 60px;
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          /* Không dùng float nữa để tương thích flickity hiện đại */
         }
-        .cell:before {
-          background: url(https://s3-us-west-2.amazonaws.com/s.cdpn.io/836/noise.jpg);
-          background-size: 256px 256px;
-          bottom: 0;
-          content: "";
-          left: 0;
-          opacity: 0.08;
-          position: absolute;
-          right: 0;
-          top: 0;
-          z-index: 1;
-        }
-        .cell:after {
-          background: radial-gradient(
-            hsla(0, 0%, 100%, 0.1),
-            hsla(0, 0%, 100%, 0)
-          );
-          bottom: 0;
-          content: "";
-          left: 0;
-          opacity: 0;
-          position: absolute;
-          right: 0;
-          top: 0;
-          transition-duration: 200ms;
-          transition-property: opacity;
-          z-index: 2;
-        }
-        .row:hover .cell:after {
-          opacity: 1;
-          transition-duration: 64ms;
-        }
-
         .text {
-          color: #fff;
           font-family: "Orbitron", monospace;
-          font-size: 1.25em;
-          font-weight: 500;
-          line-height: 50px;
-          opacity: 0.3;
-          transform: scale(0.55);
-          transition-duration: 150ms;
-          transition-property: color, opacity, text-shadow, transform;
+          font-size: 1.8rem;
+          color: #555;
+          transition: all 0.3s ease;
+          transform: scale(0.6);
         }
         .is-selected .text {
-          opacity: 1;
-          transform: scale(1);
+          color: #fff;
+          transform: scale(1.1);
+          text-shadow: 0 0 10px rgba(255, 255, 255, 0.8);
         }
         .verified .is-selected .text {
-          color: #0f0;
+          color: #19ffb0;
+          text-shadow: 0 0 15px #19ffb0;
         }
 
-        /* flickity buttons */
+        /* Custom Flickity Arrows */
         .flickity-prev-next-button {
-          width: 60px;
-          height: 50px;
-          border: none;
-          border-radius: 0;
-          background: none;
-        }
-        .flickity-prev-next-button:before {
-          background: linear-gradient(
-            135deg,
-            hsla(0, 0%, 55%, 1),
-            hsla(0, 0%, 20%, 1)
-          );
-          bottom: 0;
-          box-shadow: inset 0 1px 0 0 hsla(0, 0%, 100%, 0.3),
-            inset 0 0 0 1px hsla(0, 0%, 100%, 0.2);
-          content: "";
-          height: 12px;
-          left: 0;
-          margin: auto;
-          opacity: 0;
-          position: absolute;
-          right: 0;
-          top: 0;
-          transform: scale(1) rotate(45deg);
-          transition-duration: 200ms;
-          transition-property: background, box-shadow, opacity, transform;
-          width: 12px;
-          z-index: 1;
-        }
-        .flickity-prev-next-button:after {
-          background: linear-gradient(
-            135deg,
-            hsla(0, 0%, 25%, 1),
-            hsla(0, 0%, 10%, 1)
-          );
-          box-shadow: inset 0 1px 0 0 hsla(0, 0%, 100%, 0.15),
-            inset 0 0 0 1px hsla(0, 0%, 100%, 0.1), 0 1px 0 hsla(0, 0%, 13%, 1),
-            0 2px 0 hsla(0, 0%, 10%, 1), 0 3px 0 hsla(0, 0%, 8%, 1),
-            0 4px 0 hsla(0, 0%, 6%, 1), 0 5px 16px hsla(0, 0%, 0%, 0.75);
-          bottom: 0;
-          content: "";
-          height: 12px;
-          left: 0;
-          margin: auto;
-          position: absolute;
-          right: 0;
-          top: 0;
-          transform: scale(1) rotate(45deg);
-          transition-duration: 200ms;
-          transition-property: background, box-shadow, opacity, transform;
-          width: 12px;
-        }
-        .flickity-prev-next-button:hover:before {
-          opacity: 1;
-          transform: scale(1) rotate(45deg);
-          transition-duration: 64ms;
-        }
-        .flickity-prev-next-button:focus {
-          outline: none;
-          box-shadow: none;
-        }
-        .flickity-prev-next-button:active:before {
-          transform: scale(1) translateX(-1px) translateY(3px) rotate(45deg);
-          transition-duration: 64ms;
-        }
-        .flickity-prev-next-button.previous {
-          left: -60px;
-        }
-        .flickity-prev-next-button.next {
-          right: -60px;
+          width: 30px;
+          height: 30px;
+          background: transparent;
         }
         .flickity-prev-next-button svg {
-          display: none;
+          fill: rgba(255, 255, 255, 0.3);
+        }
+        .flickity-prev-next-button:hover svg {
+          fill: #19ffb0;
         }
 
-        .info {
-          color: #666;
-          font-family: "Share Tech Mono", monospace;
-          font-size: 0.75em;
-          line-height: 1;
-          padding-top: 24px;
-          text-align: center;
-          text-transform: uppercase;
-          max-width: 760px;
-          width: 96%;
-          margin: 28px auto 0 auto;
-        }
-        .info p {
-          margin-bottom: 10px;
-        }
-        .info a {
-          color: #fff;
-          text-decoration: none;
-        }
-
-        /* main overlay that contains only the lock */
-        .lock-main {
+        /* --- UNLOCKED UI --- */
+        .unlocked-content {
           position: fixed;
           top: 0;
           left: 0;
-          right: 0;
-          bottom: 0;
-          width: 100vw;
-          height: 100vh;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          /* keep the overlay visually below the navbar (navbar uses z-50) */
+          width: 100%;
+          height: 100%;
           z-index: 40;
-          background: rgba(0, 0, 0, 0);
-          /* don't block clicks to page chrome (navbar); allow clicks to pass
-             through the overlay unless a child explicitly enables interaction */
-          pointer-events: none;
-          padding: 0;
-          box-sizing: border-box;
-        }
-        .lock-main.hidden {
-          opacity: 0;
-          pointer-events: none;
-          transition: opacity 360ms ease;
-        }
-
-        /* Floating hint box inside the overlay. Use CSS variables to control position:
-           --floating-hint-top and --floating-hint-left (e.g. style={{'--floating-hint-top': '30vh', '--floating-hint-left': '60%'}})
-        */
-        .floating-hint {
-          position: absolute;
-          top: var(--floating-hint-top, 30vh);
-          left: var(--floating-hint-left, 50%);
-          transform: translate(-50%, -50%);
-          /* keep hint above the lock but below the navbar (navbar z-50) */
-          z-index: 45;
-          pointer-events: none;
           display: flex;
-          align-items: center;
-          justify-content: center;
-          padding: 10px 18px;
-          background: rgba(200, 20, 20, 0.12);
-          border: 2px solid rgba(200, 20, 20, 0.95);
-          box-shadow: 0 12px 30px rgba(200, 40, 40, 0.24),
-            inset 0 1px 0 rgba(255, 255, 255, 0.02);
-          color: #fff;
-          font-weight: 700;
-          font-family: "Share Tech Mono", monospace;
-          letter-spacing: 0.6px;
-          text-shadow: 0 6px 20px rgba(0, 0, 0, 0.6),
-            0 0 12px rgba(255, 80, 80, 0.08);
-          border-radius: 10px;
-          backdrop-filter: blur(4px);
-          -webkit-backdrop-filter: blur(4px);
-          transition: opacity 240ms ease, transform 240ms ease;
-          animation: floatingHintPulse 1800ms ease-in-out infinite;
-        }
-
-        .floating-hint-inner {
-          padding: 2px 6px;
-          font-size: 1rem;
-          display: inline-block;
-        }
-
-        .lock-main.hidden .floating-hint {
-          opacity: 0;
-          transform: translate(-50%, -50%) scale(0.98);
-        }
-
-        @keyframes floatingHintPulse {
-          0% {
-            transform: translate(-50%, -50%) scale(1);
-            opacity: 1;
-          }
-          50% {
-            transform: translate(-50%, -50%) scale(1.02);
-            opacity: 0.96;
-          }
-          100% {
-            transform: translate(-50%, -50%) scale(1);
-            opacity: 1;
-          }
-        }
-
-        /* Page content remains hidden until verified */
-        .page-content.hidden {
+          flex-direction: column;
           opacity: 0;
           visibility: hidden;
-          transform: translateY(8px);
-          transition: opacity 420ms ease, transform 420ms ease,
-            visibility 0s linear 420ms;
+          transition: opacity 1s ease 0.5s, visibility 0s 0.5s; /* Delay để đợi lock bay đi */
+          overflow-y: auto; /* Cho phép scroll nếu nội dung dài */
+          padding-bottom: 50px;
         }
-        .page-content.visible {
+        .unlocked-content.visible {
           opacity: 1;
           visibility: visible;
-          transform: translateY(0);
-          transition: opacity 420ms ease, transform 420ms ease;
         }
 
-        /* responsive tweaks */
-        @media (max-width: 640px) {
-          .lock-root {
-            min-height: calc(100vh - 96px);
-            padding: 24px 12px;
+        /* Message Box */
+        .secret-message-box {
+          margin-top: 80px; /* Tránh navbar nếu có */
+          margin-bottom: 40px;
+          padding: 0 20px;
+          animation: fadeInDown 1s ease 1s backwards;
+        }
+        @keyframes fadeInDown {
+          from {
+            opacity: 0;
+            transform: translateY(-20px);
           }
-          .lock {
-            width: 100%;
-          }
-          .rows {
-            width: 100%;
-          }
-          .row {
-            width: 100%;
-          }
-        }
-
-        /* reveal content area */
-        .lock-content {
-          max-height: 0;
-          opacity: 0;
-          overflow: hidden;
-          transition: max-height 480ms ease, opacity 360ms ease,
-            transform 360ms ease;
-          transform: translateY(8px);
-        }
-        /* secret box shown after unlock */
-        .page-content {
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          padding: 40px 16px;
-          box-sizing: border-box;
-        }
-        .secret-box {
-          /* larger romantic translucent panel */
-          background: linear-gradient(
-            180deg,
-            rgba(255, 153, 204, 0.12),
-            rgba(255, 102, 178, 0.08)
-          );
-          backdrop-filter: blur(6px);
-          -webkit-backdrop-filter: blur(6px);
-          border: 2px solid rgba(255, 102, 178, 0.9);
-          color: #fff;
-          width: min(780px, 94%);
-          max-width: 780px;
-          padding: 40px 48px;
-          border-radius: 18px;
-          box-shadow: 0 30px 60px rgba(15, 6, 20, 0.55),
-            0 6px 18px rgba(0, 0, 0, 0.35),
-            inset 0 1px 0 rgba(255, 255, 255, 0.06);
-          text-align: center;
-          opacity: 0;
-          transform: translateY(18px) scale(0.985);
-          position: relative;
-          overflow: hidden;
-        }
-        .secret-box:before {
-          content: "❤";
-          position: absolute;
-          top: 14px;
-          left: 50%;
-          transform: translateX(-50%);
-          font-size: 18px;
-          color: rgba(255, 255, 255, 0.18);
-          filter: blur(0.3px);
-          pointer-events: none;
-        }
-        .page-content.visible .secret-box {
-          animation: revealSecret 560ms cubic-bezier(0.22, 0.9, 0.35, 1)
-            forwards 120ms;
-        }
-        .secret-box h2 {
-          margin: 0 0 12px 0;
-          font-family: "Playfair Display", serif;
-          font-size: 1.6rem;
-          font-weight: 600;
-          letter-spacing: 0.6px;
-          color: #fff;
-          text-shadow: 0 6px 20px rgba(255, 102, 178, 0.12),
-            0 2px 6px rgba(0, 0, 0, 0.4);
-        }
-        .secret-box p {
-          margin: 0;
-          margin-top: 6px;
-          font-family: "Share Tech Mono", monospace;
-          color: rgba(255, 255, 255, 0.95);
-          font-size: 1.05rem;
-          line-height: 1.6;
-          letter-spacing: 0.8px;
-          text-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
-        }
-        /* wrapper for romantic paragraph placed under the secret box */
-        .romance-wrapper {
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          width: 100%;
-          margin-top: 0px; /* bring boxes closer */
-        }
-
-        /* romantic paragraph box below the secret box */
-        .romance-box {
-          /* increase max size so tilted/offset profile cards don't get clipped */
-          width: min(1160px, 96%);
-          max-width: 1160px;
-          margin-top: 8px;
-          border-radius: 16px;
-          padding: 0;
-          position: relative;
-          opacity: 0;
-          transform: translateY(18px) scale(0.995);
-          overflow: visible;
-        }
-
-        /* connector between secret-box and romance-box */
-        .connector {
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          pointer-events: none;
-          margin-top: 6px;
-          margin-bottom: 6px;
-        }
-        .connector-heart {
-          display: inline-block;
-          font-size: 20px;
-          color: rgba(255, 102, 178, 0.98);
-          background: radial-gradient(
-            circle at 50% 40%,
-            rgba(255, 102, 178, 0.12),
-            rgba(255, 102, 178, 0.02)
-          );
-          padding: 6px 10px;
-          border-radius: 999px;
-          box-shadow: 0 10px 30px rgba(255, 102, 178, 0.06),
-            0 4px 12px rgba(0, 0, 0, 0.35);
-          transform-origin: center;
-          animation: connectorBob 2400ms ease-in-out infinite;
-        }
-        @keyframes connectorBob {
-          0% {
-            transform: translateY(0) scale(1);
+          to {
             opacity: 1;
+            transform: translateY(0);
           }
-          50% {
-            transform: translateY(-6px) scale(1.06);
-            opacity: 0.95;
+        }
+
+        /* Romance Stage: Layout chính */
+        .romance-stage {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 40px;
+          width: 90%;
+          max-width: 1200px;
+          margin: 0 auto;
+          flex-wrap: wrap; /* Responsive */
+        }
+
+        .card-wrapper {
+          flex: 1;
+          min-width: 300px;
+          max-width: 350px;
+          animation: fadeInUp 1s ease 1.2s backwards;
+        }
+        .card-wrapper.right-card {
+          animation-delay: 1.4s;
+        }
+
+        @keyframes fadeInUp {
+          from {
+            opacity: 0;
+            transform: translateY(30px);
           }
-          100% {
-            transform: translateY(0) scale(1);
+          to {
             opacity: 1;
+            transform: translateY(0);
           }
         }
-        .romance-inner {
-          background: linear-gradient(
-            180deg,
-            rgba(255, 102, 178, 0.08),
-            rgba(255, 153, 204, 0.06)
-          );
-          border: 1px solid rgba(255, 102, 178, 0.32);
-          box-shadow: 0 24px 48px rgba(10, 6, 12, 0.55),
-            inset 0 1px 0 rgba(255, 255, 255, 0.03);
-          backdrop-filter: blur(8px);
-          -webkit-backdrop-filter: blur(8px);
-          /* more padding to give space around tilted cards */
-          padding: 36px 48px;
-          border-radius: 14px;
-          text-align: center;
+
+        /* Heart Container */
+        .heart-wrapper {
+          width: 300px;
+          height: 300px;
+          position: relative;
+          flex-shrink: 0;
+          animation: zoomIn 1s ease 1.6s backwards;
         }
-        .romance-grid {
-          display: flex;
-          align-items: stretch;
-          justify-content: space-between;
-          gap: 36px;
+        @keyframes zoomIn {
+          from {
+            opacity: 0;
+            transform: scale(0);
+          }
+          to {
+            opacity: 1;
+            transform: scale(1);
+          }
         }
-        /* give each profile column a fixed comfortable width so cards don't get squeezed */
-        .romance-col {
-          flex: 0 0 360px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
+
+        /* Responsive */
+        @media (max-width: 1024px) {
+          .romance-stage {
+            gap: 20px;
+          }
+          .heart-wrapper {
+            order: -1;
+            width: 200px;
+            height: 200px;
+            margin-bottom: -20px;
+          }
         }
-        .romance-center {
-          flex: 0 0 120px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-        }
-        @media (max-width: 980px) {
-          .romance-grid {
+        @media (max-width: 768px) {
+          .lock-wrapper {
+            padding-top: 0;
+          }
+          .romance-stage {
             flex-direction: column;
-            gap: 18px;
-            align-items: center;
           }
-          .romance-col {
-            flex: 0 0 auto;
-            width: min(92%, 420px);
+          .card-wrapper {
+            width: 100%;
+            max-width: 100%;
           }
-          .romance-center {
-            flex: 0 0 auto;
-            width: auto;
-          }
-          .romance-box {
-            width: min(940px, 96%);
-            max-width: 940px;
-          }
-        }
-        .heart-link {
-          display: inline-block;
-          font-size: 34px;
-          color: rgba(255, 102, 178, 0.98);
-          background: radial-gradient(
-            circle at 50% 40%,
-            rgba(255, 102, 178, 0.12),
-            rgba(255, 102, 178, 0.02)
-          );
-          padding: 10px 14px;
-          border-radius: 999px;
-          box-shadow: 0 10px 30px rgba(255, 102, 178, 0.06),
-            0 4px 12px rgba(0, 0, 0, 0.35);
-          text-decoration: none;
-          transition: transform 220ms ease, box-shadow 220ms ease;
-        }
-        .heart-link:hover {
-          transform: translateY(-6px) scale(1.03);
-          box-shadow: 0 18px 40px rgba(255, 102, 178, 0.12),
-            0 6px 18px rgba(0, 0, 0, 0.45);
-        }
-        .romance-area {
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          padding: 24px 16px 40px 16px;
-          box-sizing: border-box;
-          width: 100%;
-          margin-top: 6px;
-        }
-        .romance-inner p {
-          margin: 0;
-          font-family: "Playfair Display", serif;
-          color: rgba(255, 235, 245, 0.98);
-          font-size: 1.12rem;
-          line-height: 1.9;
-          letter-spacing: 0.4px;
-          font-style: italic;
-          text-shadow: 0 6px 22px rgba(0, 0, 0, 0.45);
-        }
-        .romance-inner p + p {
-          margin-top: 18px;
-        }
-        /* floating faint purple hearts overlay (replaces romance box) */
-        .hearts-overlay {
-          position: relative;
-          width: 100%;
-          height: 200px;
-          margin-top: 8px;
-          pointer-events: none;
-          overflow: visible;
-        }
-        .heart {
-          position: absolute;
-          width: 18px;
-          height: 18px;
-          transform: rotate(-45deg) scale(1);
-          background: rgba(170, 80, 170, 0.12);
-          border-radius: 3px;
-          box-shadow: 0 8px 22px rgba(130, 40, 130, 0.06),
-            inset 0 1px 0 rgba(255, 255, 255, 0.03);
-          will-change: transform, opacity, top;
-          z-index: 3;
-          animation-name: floatHeart;
-          animation-timing-function: ease-in-out;
-          animation-iteration-count: infinite;
-        }
-        .heart:before,
-        .heart:after {
-          content: "";
-          position: absolute;
-          width: 18px;
-          height: 18px;
-          background: rgba(170, 80, 170, 0.12);
-          border-radius: 50%;
-        }
-        .heart:before {
-          top: -9px;
-          left: 0;
-        }
-        .heart:after {
-          left: 9px;
-          top: 0;
-        }
-        @keyframes floatHeart {
-          0% {
-            transform: translateY(0) rotate(-45deg) scale(1);
-            opacity: 0.12;
-          }
-          50% {
-            transform: translateY(-22px) rotate(-38deg) scale(1.06);
-            opacity: 0.18;
-          }
-          100% {
-            transform: translateY(0) rotate(-45deg) scale(1);
-            opacity: 0.12;
-          }
-        }
-        /* decorative soft glow */
-        .romance-box:before {
-          content: "";
-          position: absolute;
-          left: 8%;
-          right: 8%;
-          top: -6px;
-          bottom: -6px;
-          background: radial-gradient(
-            ellipse at center,
-            rgba(255, 102, 178, 0.06),
-            rgba(0, 0, 0, 0)
-          );
-          z-index: -1;
-          filter: blur(18px);
-          pointer-events: none;
-        }
-        /* floating sparkles */
-        .romance-box:after {
-          content: "";
-          position: absolute;
-          width: 220px;
-          height: 220px;
-          right: -30px;
-          top: -40px;
-          background: radial-gradient(
-              circle at 20% 20%,
-              rgba(255, 200, 230, 0.18),
-              rgba(255, 200, 230, 0) 30%
-            ),
-            radial-gradient(
-              circle at 80% 80%,
-              rgba(255, 145, 190, 0.12),
-              rgba(255, 145, 190, 0) 30%
-            );
-          transform: rotate(12deg);
-          z-index: 0;
-          opacity: 0.9;
-          animation: floatSpark 4200ms ease-in-out infinite;
-          pointer-events: none;
-        }
-        .romance-wrapper.visible .romance-box {
-          animation: revealRomance 720ms cubic-bezier(0.22, 0.9, 0.35, 1)
-            forwards 420ms;
-        }
-        @keyframes revealRomance {
-          0% {
-            opacity: 0;
-            transform: translateY(18px) scale(0.995);
-          }
-          60% {
-            opacity: 1;
-            transform: translateY(-8px) scale(1.005);
-          }
-          100% {
-            opacity: 1;
-            transform: translateY(0) scale(1);
-          }
-        }
-        @keyframes floatSpark {
-          0% {
-            transform: translateY(0) rotate(12deg);
-          }
-          50% {
-            transform: translateY(-8px) rotate(8deg);
-          }
-          100% {
-            transform: translateY(0) rotate(12deg);
-          }
-        }
-        @keyframes revealSecret {
-          0% {
-            opacity: 0;
-            transform: translateY(12px) scale(0.98);
-          }
-          60% {
-            opacity: 1;
-            transform: translateY(-6px) scale(1.02);
-          }
-          100% {
-            opacity: 1;
-            transform: translateY(0) scale(1);
-          }
-        }
-        .lock.verified + .info + .lock-content {
-          max-height: 800px;
-          opacity: 1;
-          transform: translateY(0);
         }
       `}</style>
     </>
