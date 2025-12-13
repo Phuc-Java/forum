@@ -148,13 +148,20 @@ export default function HeartCanvas() {
       rafId = renderer.domElement ? requestAnimationFrame(render) : null;
     }
 
-    // load obj and start
+    // load obj and start (try external URL first; fallback to simple mesh on error)
     const loader = new OBJLoader();
-    loader.load("https://assets.codepen.io/127738/heart_2.obj", (obj) => {
-      heart = obj.children[0] as THREE.Mesh;
-      heart.geometry.rotateX(-Math.PI * 0.5);
-      heart.geometry.scale(0.04, 0.04, 0.04);
-      heart.geometry.translate(0, -0.4, 0);
+    const primaryUrl = "https://assets.codepen.io/127738/heart_2.obj";
+    const startWithHeart = (mesh: THREE.Mesh) => {
+      heart = mesh;
+      try {
+        heart.geometry.rotateX(-Math.PI * 0.5);
+      } catch {}
+      try {
+        heart.geometry.scale(0.04, 0.04, 0.04);
+      } catch {}
+      try {
+        heart.geometry.translate(0, -0.4, 0);
+      } catch {}
       heart.material = new THREE.MeshBasicMaterial({ color: 0xff5555 });
       group.add(heart);
 
@@ -162,7 +169,11 @@ export default function HeartCanvas() {
         (heart.geometry as THREE.BufferGeometry).attributes.position
           .array as ArrayLike<number>
       );
-      sampler = new MeshSurfaceSampler(heart).build();
+      try {
+        sampler = new MeshSurfaceSampler(heart).build();
+      } catch {
+        sampler = null;
+      }
       initSpikes();
 
       gsap
@@ -179,7 +190,36 @@ export default function HeartCanvas() {
 
       // start render loop
       rafId = requestAnimationFrame(render);
-    });
+    };
+
+    loader.load(
+      primaryUrl,
+      (obj) => {
+        const mesh = (obj.children[0] as THREE.Mesh) || null;
+        if (mesh) startWithHeart(mesh);
+        else {
+          // unexpected structure — fallback to sphere
+          console.warn("Heart OBJ loaded but no mesh found, using fallback.");
+          const fallback = new THREE.Mesh(
+            new THREE.SphereGeometry(0.2, 32, 32),
+            new THREE.MeshBasicMaterial({ color: 0xff5555 })
+          );
+          startWithHeart(fallback);
+        }
+      },
+      undefined,
+      (err) => {
+        // loading failed (CORS/network/etc) — fallback to a simple geometry
+        // log the error to aid debugging in production
+        // eslint-disable-next-line no-console
+        console.warn("Failed to load heart OBJ:", err);
+        const fallback = new THREE.Mesh(
+          new THREE.SphereGeometry(0.2, 32, 32),
+          new THREE.MeshBasicMaterial({ color: 0xff5555 })
+        );
+        startWithHeart(fallback);
+      }
+    );
 
     window.addEventListener("resize", onWindowResize);
 

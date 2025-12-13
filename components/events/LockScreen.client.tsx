@@ -98,7 +98,7 @@ export default function LockScreen({
         }),
       };
 
-      const pin = "2007";
+      const pin = "8844";
       let verified = false;
 
       function getCode() {
@@ -260,6 +260,25 @@ export default function LockScreen({
             ))}
           </div>
         </div>
+        {/* Floating hint box — separate from the lock so it doesn't affect layout.
+            Position can be controlled by setting CSS variables on this element:
+            --floating-hint-top and --floating-hint-left (e.g. inline style).
+        */}
+        <div
+          className="floating-hint"
+          role="note"
+          aria-hidden="true"
+          style={
+            {
+              top: "206px",
+              left: "770px",
+              right: "auto",
+              transform: "translate(0,0)",
+            } as React.CSSProperties
+          }
+        >
+          <div className="floating-hint-inner">Danh Bạ APP G.</div>
+        </div>
       </main>
 
       <div className={`page-content ${isVerified ? "visible" : "hidden"}`}>
@@ -414,6 +433,9 @@ export default function LockScreen({
             -4px 4px 0 hsla(0, 0%, 3%, 1), -8px 8px 16px hsla(0, 0%, 0%, 0.5);
           position: relative;
           z-index: 2;
+          /* allow interacting with the lock panel while the overlay
+             remains non-interactive so page chrome (navbar) is usable */
+          pointer-events: auto;
           max-width: 230px;
           width: min(230px, 90%);
           margin: 0 auto;
@@ -753,9 +775,12 @@ export default function LockScreen({
           display: flex;
           align-items: center;
           justify-content: center;
-          z-index: 9999;
+          /* keep the overlay visually below the navbar (navbar uses z-50) */
+          z-index: 40;
           background: rgba(0, 0, 0, 0);
-          pointer-events: auto;
+          /* don't block clicks to page chrome (navbar); allow clicks to pass
+             through the overlay unless a child explicitly enables interaction */
+          pointer-events: none;
           padding: 0;
           box-sizing: border-box;
         }
@@ -763,6 +788,64 @@ export default function LockScreen({
           opacity: 0;
           pointer-events: none;
           transition: opacity 360ms ease;
+        }
+
+        /* Floating hint box inside the overlay. Use CSS variables to control position:
+           --floating-hint-top and --floating-hint-left (e.g. style={{'--floating-hint-top': '30vh', '--floating-hint-left': '60%'}})
+        */
+        .floating-hint {
+          position: absolute;
+          top: var(--floating-hint-top, 30vh);
+          left: var(--floating-hint-left, 50%);
+          transform: translate(-50%, -50%);
+          /* keep hint above the lock but below the navbar (navbar z-50) */
+          z-index: 45;
+          pointer-events: none;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          padding: 10px 18px;
+          background: rgba(200, 20, 20, 0.12);
+          border: 2px solid rgba(200, 20, 20, 0.95);
+          box-shadow: 0 12px 30px rgba(200, 40, 40, 0.24),
+            inset 0 1px 0 rgba(255, 255, 255, 0.02);
+          color: #fff;
+          font-weight: 700;
+          font-family: "Share Tech Mono", monospace;
+          letter-spacing: 0.6px;
+          text-shadow: 0 6px 20px rgba(0, 0, 0, 0.6),
+            0 0 12px rgba(255, 80, 80, 0.08);
+          border-radius: 10px;
+          backdrop-filter: blur(4px);
+          -webkit-backdrop-filter: blur(4px);
+          transition: opacity 240ms ease, transform 240ms ease;
+          animation: floatingHintPulse 1800ms ease-in-out infinite;
+        }
+
+        .floating-hint-inner {
+          padding: 2px 6px;
+          font-size: 1rem;
+          display: inline-block;
+        }
+
+        .lock-main.hidden .floating-hint {
+          opacity: 0;
+          transform: translate(-50%, -50%) scale(0.98);
+        }
+
+        @keyframes floatingHintPulse {
+          0% {
+            transform: translate(-50%, -50%) scale(1);
+            opacity: 1;
+          }
+          50% {
+            transform: translate(-50%, -50%) scale(1.02);
+            opacity: 0.96;
+          }
+          100% {
+            transform: translate(-50%, -50%) scale(1);
+            opacity: 1;
+          }
         }
 
         /* Page content remains hidden until verified */
