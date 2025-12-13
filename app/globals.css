@@ -2,18 +2,22 @@
 
 /* Cyberpunk/Hacker Theme - Dark with Neon Accents */
 :root {
-  --background: #0a0a0f;
-  --foreground: #e0e0e0;
-  --primary: #00ff9f;
-  --secondary: #bd00ff;
-  --accent: #00d9ff;
-  --danger: #ff0055;
-  --warning: #ffaa00;
-  --surface: #1a1a24;
-  --surface-elevated: #252535;
-  --border: #2a2a3e;
-  --glow-primary: rgba(0, 255, 159, 0.5);
-  --glow-secondary: rgba(189, 0, 255, 0.5);
+  /* Dark canvas */
+  --background: #071116; /* slightly cooler dark */
+  --foreground: #e6f6f5;
+  /* Primary neon (teal) inspired by Thành Viên */
+  --primary: #00e6c3;
+  /* Accent magenta for highlights */
+  --secondary: #d66cff;
+  /* Cyan accent for subtle borders */
+  --accent: #00c9ff;
+  --danger: #ff6b8a;
+  --warning: #ffb86b;
+  --surface: #0f1418;
+  --surface-elevated: #14191f;
+  --border: #213033;
+  --glow-primary: rgba(0, 230, 195, 0.26);
+  --glow-secondary: rgba(214, 108, 255, 0.22);
 }
 
 @theme inline {
@@ -400,8 +404,498 @@ html::-webkit-scrollbar {
   }
 }
 
+/* Additional Cyberpunk Chat Styles */
+.cyber-frame {
+  background: linear-gradient(
+    180deg,
+    rgba(8, 14, 22, 0.6),
+    rgba(6, 10, 16, 0.5)
+  );
+  border: 1px solid rgba(255, 255, 255, 0.03);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.6),
+    inset 0 1px 0 rgba(255, 255, 255, 0.02);
+}
+
+.neon-border {
+  position: relative;
+}
+.neon-border::after {
+  content: "";
+  position: absolute;
+  inset: -1px;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(
+    90deg,
+    rgba(0, 255, 159, 0.12),
+    rgba(0, 217, 255, 0.08),
+    rgba(189, 0, 255, 0.08)
+  );
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  pointer-events: none;
+  filter: blur(6px) saturate(1.2);
+  opacity: 0.9;
+}
+
+/* Animated header gradient shift (subtle) */
+@keyframes headerGradientShift {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+.chat-header-gradient {
+  background: linear-gradient(
+    90deg,
+    rgba(0, 230, 195, 0.06),
+    rgba(0, 201, 255, 0.04),
+    rgba(214, 108, 255, 0.06)
+  );
+  background-size: 300% 100%;
+  animation: headerGradientShift 8s linear infinite;
+}
+
+/* Neon flicker for small elements */
+@keyframes neon-flicker {
+  0%,
+  100% {
+    opacity: 1;
+    filter: brightness(1);
+  }
+  50% {
+    opacity: 0.88;
+    filter: brightness(1.15);
+  }
+}
+
+.neon-flicker {
+  animation: neon-flicker 2s ease-in-out infinite;
+}
+
+/* Stronger neon outline for message bubbles */
+.message-user::before,
+.message-ai::before {
+  content: "";
+  position: absolute;
+  inset: -2px;
+  border-radius: inherit;
+  pointer-events: none;
+  background: linear-gradient(
+    90deg,
+    rgba(0, 230, 195, 0.08),
+    rgba(0, 201, 255, 0.04)
+  );
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  filter: blur(6px);
+  opacity: 0.7;
+}
+
+.message-ai::before {
+  background: linear-gradient(
+    90deg,
+    rgba(214, 108, 255, 0.08),
+    rgba(140, 80, 255, 0.04)
+  );
+}
+
+/* Make message containers positioned for pseudo elements */
+.message-user,
+.message-ai {
+  position: relative;
+}
+
+/* Add subtle animated glow pulse for active assistant messages */
+.message-ai.animate-active {
+  animation: pulse-glow 3s ease-in-out infinite;
+}
+
+.glass-panel {
+  background: rgba(8, 12, 16, 0.45);
+  border: 1px solid rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(6px) saturate(120%);
+}
+
+.neon-text {
+  color: #e6fff7;
+  text-shadow: 0 0 6px rgba(0, 255, 159, 0.18), 0 0 18px rgba(0, 217, 255, 0.06),
+    0 0 32px rgba(189, 0, 255, 0.04);
+}
+
+.message-user {
+  border-radius: 14px 14px 6px 14px;
+  background: linear-gradient(
+    180deg,
+    rgba(6, 12, 14, 0.7),
+    rgba(10, 18, 16, 0.6)
+  );
+  border: 1px solid rgba(0, 230, 195, 0.12);
+  box-shadow: 0 12px 34px rgba(0, 230, 195, 0.04),
+    inset 0 2px 0 rgba(255, 255, 255, 0.02);
+  backdrop-filter: blur(4px) saturate(120%);
+  padding: 0.35rem 0.75rem;
+}
+
+.message-ai {
+  border-radius: 14px 14px 14px 6px;
+  background: linear-gradient(
+    180deg,
+    rgba(12, 8, 18, 0.68),
+    rgba(18, 12, 26, 0.6)
+  );
+  border: 1px solid rgba(214, 108, 255, 0.1);
+  box-shadow: 0 12px 34px rgba(214, 108, 255, 0.035),
+    inset 0 2px 0 rgba(255, 255, 255, 0.02);
+  backdrop-filter: blur(4px) saturate(120%);
+  padding: 0.35rem 0.75rem;
+}
+
+/* Enhanced chat message interactions */
+.chat-message {
+  transition: transform 220ms ease, opacity 240ms ease;
+}
+.chat-message:hover {
+  z-index: 5;
+}
+
+.chat-message .message-user,
+.chat-message .message-ai {
+  transition: box-shadow 220ms ease, transform 220ms ease,
+    border-color 240ms ease;
+  will-change: transform, box-shadow;
+}
+
+.chat-message .message-user:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 14px 40px rgba(0, 255, 159, 0.06),
+    inset 0 1px 0 rgba(255, 255, 255, 0.02);
+  border-color: rgba(0, 255, 159, 0.18);
+}
+
+.chat-message .message-ai:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 14px 40px rgba(189, 0, 255, 0.05),
+    inset 0 1px 0 rgba(255, 255, 255, 0.02);
+  border-color: rgba(189, 0, 255, 0.16);
+}
+
+/* Accent glow on focus/keyboard navigation */
+.chat-message .message-user:focus,
+.chat-message .message-ai:focus {
+  outline: none;
+  box-shadow: 0 0 0 4px rgba(0, 255, 159, 0.06),
+    0 12px 36px rgba(0, 255, 159, 0.06);
+}
+
+/* Small meta line subtle reveal on hover */
+.chat-message .message-user .meta,
+.chat-message .message-ai .meta {
+  opacity: 0;
+  transform: translateY(4px);
+  transition: opacity 220ms ease, transform 220ms ease;
+}
+.chat-message:hover .meta {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Avatar hover and focus */
+.chat-message img {
+  transition: transform 200ms ease, box-shadow 240ms ease;
+}
+.chat-message img:hover {
+  transform: scale(1.06) rotate(-1deg);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.6), 0 0 14px rgba(0, 255, 159, 0.06);
+}
+
+/* Pasted image gallery interactions */
+.pasted-thumb {
+  transition: transform 220ms ease, box-shadow 220ms ease, filter 220ms ease;
+  border-radius: 0.5rem;
+}
+.pasted-thumb:hover {
+  transform: scale(1.04) translateY(-4px);
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.6), 0 0 18px rgba(0, 200, 170, 0.06);
+  filter: saturate(1.05) contrast(1.02);
+}
+
+/* Input focus neon outline */
+.chat-input-focus:focus {
+  box-shadow: 0 0 0 6px rgba(0, 217, 255, 0.06), 0 6px 24px rgba(0, 0, 0, 0.5);
+  border-color: rgba(0, 217, 255, 0.18);
+}
+
+/* Header hover subtle gradient shift */
+.chat-header-hover:hover {
+  transform: translateY(-2px);
+  filter: saturate(1.05) brightness(1.02);
+}
+
+/* typing indicator */
+.typing-dots {
+  display: inline-flex;
+  gap: 6px;
+  align-items: center;
+}
+.typing-dots span {
+  width: 7px;
+  height: 7px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 50%;
+  opacity: 0.9;
+  transform: translateY(0);
+  animation: typing-bounce 1s infinite ease-in-out;
+}
+.typing-dots span:nth-child(2) {
+  animation-delay: 0.15s;
+}
+.typing-dots span:nth-child(3) {
+  animation-delay: 0.3s;
+}
+@keyframes typing-bounce {
+  0%,
+  80%,
+  100% {
+    transform: translateY(0);
+    opacity: 0.7;
+  }
+  40% {
+    transform: translateY(-6px);
+    opacity: 1;
+  }
+}
+
+/* subtle vignette */
+.vignette::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(
+    ellipse at center,
+    rgba(0, 0, 0, 0) 40%,
+    rgba(0, 0, 0, 0.45) 100%
+  );
+}
+
+/* Button neon hover */
+.btn-neon {
+  transition: box-shadow 200ms ease, transform 120ms ease;
+}
+.btn-neon:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 30px rgba(0, 255, 159, 0.12),
+    0 0 40px rgba(0, 217, 255, 0.06);
+}
+
+/* small responsive tweaks for chat */
+@media (max-width: 1024px) {
+  .max-w-5xl {
+    padding: 0 1rem;
+  }
+  .hidden\:lg\:block {
+    display: none;
+  }
+}
+
 .animate-slide-in-right {
   animation: slideInRight 0.4s ease-out forwards;
+}
+
+/* Red neon blink for important titles (Đấng Toàn Năng) */
+@keyframes neon-blink-danger {
+  0%,
+  100% {
+    text-shadow: 0 0 6px rgba(255, 77, 109, 0.9),
+      0 0 20px rgba(255, 77, 109, 0.6);
+    filter: brightness(1);
+  }
+  50% {
+    text-shadow: 0 0 18px rgba(255, 77, 109, 1),
+      0 0 40px rgba(255, 77, 109, 0.8);
+    filter: brightness(1.25);
+  }
+}
+
+.text-neon-danger {
+  color: #ff5a74; /* light red/pink */
+  text-shadow: 0 0 8px rgba(255, 77, 109, 0.9), 0 0 20px rgba(255, 77, 109, 0.6);
+}
+
+.animate-neon-blink-danger {
+  animation: neon-blink-danger 1.6s ease-in-out infinite;
+}
+
+/* Cyberpunk button styles */
+.cyber-btn {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  border-radius: 0.75rem;
+  padding: 0.5rem 1rem;
+  font-weight: 700;
+  transition: transform 180ms cubic-bezier(0.2, 0.9, 0.2, 1),
+    box-shadow 200ms ease, filter 180ms ease;
+  outline: none;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.cyber-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.cyber-btn::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  transition: opacity 200ms ease, transform 300ms ease;
+}
+
+.cyber-btn-inner {
+  position: relative;
+  z-index: 2;
+}
+
+.cyber-btn-primary {
+  background: linear-gradient(
+    135deg,
+    rgba(12, 105, 120, 1) 0%,
+    rgba(0, 200, 170, 0.9) 100%
+  );
+  color: #021018; /* dark text for contrast */
+  box-shadow: 0 6px 24px rgba(0, 200, 170, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.03);
+}
+
+.cyber-btn-primary::before {
+  box-shadow: 0 0 18px rgba(0, 230, 200, 0.12), 0 0 36px rgba(0, 230, 200, 0.08);
+  transform: scale(1.02);
+  opacity: 0.9;
+}
+
+.cyber-btn-primary:hover {
+  transform: translateY(-3px) scale(1.02);
+  filter: brightness(1.06) saturate(1.05);
+}
+
+/* Add a soft inner highlight and ripple on click using pseudo-elements */
+.cyber-btn::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  z-index: 1;
+  pointer-events: none;
+  transition: opacity 220ms ease, transform 360ms ease;
+  opacity: 0;
+}
+.cyber-btn:active::after {
+  opacity: 0.14;
+  transform: scale(0.98);
+  background: radial-gradient(
+    circle at center,
+    rgba(255, 255, 255, 0.12),
+    transparent 40%
+  );
+}
+
+/* Accent ring for data-accent values */
+.cyber-btn[data-accent] {
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.6);
+}
+.cyber-btn[data-accent="red"]::before {
+  box-shadow: 0 0 18px rgba(255, 90, 116, 0.14),
+    0 0 36px rgba(255, 90, 116, 0.06);
+}
+
+/* Make header title more 'Thành Viên' like */
+.text-neon-danger {
+  color: #ff72a2;
+  text-shadow: 0 0 8px rgba(255, 114, 162, 0.9),
+    0 0 26px rgba(214, 108, 255, 0.14);
+}
+
+/* Stronger input focus with colored glow */
+.chat-input-focus:focus {
+  box-shadow: 0 0 0 6px rgba(0, 201, 255, 0.06), 0 8px 30px rgba(0, 0, 0, 0.5);
+  border-color: rgba(0, 201, 255, 0.2);
+}
+
+/* Decorative scanlines with lower opacity for the entire chat area */
+.chat-scanline::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: linear-gradient(rgba(0, 0, 0, 0.02) 1px, transparent 1px);
+  background-size: 100% 40px;
+  pointer-events: none;
+  opacity: 0.06;
+}
+
+.cyber-btn-primary:active {
+  transform: translateY(0) scale(0.995);
+}
+
+/* Ghost variant */
+.cyber-btn-ghost {
+  background: transparent;
+  color: #9be3ff;
+  border: 1px solid rgba(156, 255, 243, 0.08);
+  box-shadow: 0 6px 18px rgba(10, 20, 30, 0.25);
+}
+
+.cyber-btn-ghost::before {
+  box-shadow: 0 0 8px rgba(155, 100, 255, 0.06);
+  opacity: 0.8;
+}
+
+.cyber-btn-ghost:hover {
+  transform: translateY(-2px);
+  filter: brightness(1.05);
+}
+
+/* Neon outline accent */
+.cyber-btn[data-accent="red"] {
+  --accent-color: rgba(255, 90, 116, 0.95);
+}
+
+.cyber-btn[data-accent="red"]::before {
+  box-shadow: 0 0 14px var(--accent-color), 0 0 34px rgba(255, 90, 116, 0.45);
+}
+
+/* subtle pulse on attention state */
+@keyframes cyber-pulse {
+  0% {
+    box-shadow: 0 6px 20px rgba(0, 200, 170, 0.06);
+  }
+  50% {
+    box-shadow: 0 10px 30px rgba(0, 200, 170, 0.12);
+  }
+  100% {
+    box-shadow: 0 6px 20px rgba(0, 200, 170, 0.06);
+  }
+}
+.cyber-btn.pulse {
+  animation: cyber-pulse 2.6s ease-in-out infinite;
+}
+
+/* small focus ring for keyboard users */
+.cyber-btn:focus-visible {
+  box-shadow: 0 0 0 4px rgba(0, 200, 170, 0.12), 0 6px 22px rgba(0, 0, 0, 0.45);
 }
 
 /* Float Animation */
@@ -701,6 +1195,35 @@ html::-webkit-scrollbar {
 
 /* Glass Morphism Effect */
 .glass {
+  /* Cyber button inner glow element */
+  .cyber-btn-glow {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    border-radius: inherit;
+    background: radial-gradient(
+      circle at 20% 20%,
+      rgba(255, 255, 255, 0.02),
+      transparent 20%
+    );
+    pointer-events: none;
+    transition: opacity 220ms ease, transform 260ms ease;
+    opacity: 0.9;
+  }
+  .cyber-btn:hover .cyber-btn-glow {
+    transform: scale(1.02) translateY(-2px);
+    opacity: 1;
+  }
+
+  /* Make hover/accent stronger for primary */
+  .cyber-btn-primary {
+    background-image: linear-gradient(
+      135deg,
+      rgba(0, 180, 150, 0.98) 0%,
+      rgba(0, 230, 195, 0.96) 100%
+    );
+  }
+
   background: rgba(26, 26, 36, 0.7);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);

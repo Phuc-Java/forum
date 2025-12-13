@@ -1,31 +1,72 @@
-import styles from "../giang-sinh/page.module.css";
+"use client";
+
+import styles from "./phim.module.css";
 import FilmScanner from "./FilmScannerSimple.client";
+import { useState } from "react";
 
 export default function PhimPage() {
+  const [activeFilter, setActiveFilter] = useState("Tất cả");
+
   return (
-    <>
-      <header className={styles.sectionHeader}>
-        <div className={styles.sectionHeaderLeft}>
-          <div className={styles.sectionHeaderIcon}>🎬</div>
-          <div>
-            <div className={styles.sectionHeaderTitle}>Tiêu Đề</div>
-            <div className={styles.sectionHeaderSubtitle}>
-              Bộ sưu tập phim tuyển chọn
-            </div>
+    <div className={styles.pageContainer}>
+      {/* 1. HERO SECTION */}
+      <header className={styles.heroSection}>
+        <div className={styles.heroBackground}>
+          <img
+            src="/film/unnamed (1).jpg"
+            className={styles.heroBgImage}
+            alt="Hero BG"
+          />
+        </div>
+        <div className={styles.heroContent}>
+          <span className={styles.heroBadge}>FEATURED / 2025</span>
+          <h1 className={styles.heroTitle}>
+            CHRONOS
+            <br />
+            <span
+              style={{ color: "transparent", WebkitTextStroke: "2px #fff" }}
+            >
+              BATTLE OF AGES
+            </span>
+          </h1>
+          <p className={styles.heroDesc}>
+            Khi thời gian sụp đổ, một chiến binh Hacker phải xâm nhập vào lõi
+            máy chủ quá khứ để viết lại mã nguồn tương lai. Siêu phẩm Cyberpunk
+            hành động.
+          </p>
+
+          <div className={styles.heroActions}>
+            <button className={styles.btnPlay}>▶ KHỞI CHẠY</button>
           </div>
         </div>
-
-        <div className={styles.sectionHeaderRight}>
-          <div className={styles.sectionHeaderBadge}>12</div>
-          <a href="#" className={styles.sectionHeaderCTA}>
-            Xem tất cả
-          </a>
-        </div>
       </header>
-      <main className={styles.page}>
+
+      {/* 2. FILTER BAR */}
+      <nav className={styles.filterBar}>
+        {["Tất cả", "Cyberpunk", "Hacking", "Sci-Fi", "Kinh Dị"].map((cat) => (
+          <div
+            key={cat}
+            className={`${styles.filterItem} ${
+              activeFilter === cat ? styles.filterActive : ""
+            }`}
+            onClick={() => setActiveFilter(cat)}
+          >
+            {cat}
+          </div>
+        ))}
+      </nav>
+
+      {/* 3. MAIN CONTENT: Grid Phim */}
+      <main className={styles.mainContent}>
+        <div className={styles.sectionHeader}>
+          <h2 className={styles.sectionTitle}>
+            DATABASE <span>//</span> PHIM ĐỀ CỬ
+          </h2>
+        </div>
+
         <div className={styles.cardsContainer}>
-          {/* 1 */}
-          <a href="#" target="_blank" rel="noreferrer" className={styles.card}>
+          {/* CARD 1 */}
+          <a href="#" className={styles.card}>
             <div className={styles.wrapper}>
               <img
                 src="https://ggayane.github.io/css-experiments/cards/dark_rider-cover.jpg"
@@ -39,12 +80,12 @@ export default function PhimPage() {
             <img
               src="https://ggayane.github.io/css-experiments/cards/dark_rider-character.webp"
               className={styles.character}
-              alt="Dark Rider character"
+              alt="Character"
             />
           </a>
 
-          {/* 2 */}
-          <a href="#" target="_blank" rel="noreferrer" className={styles.card}>
+          {/* CARD 2 */}
+          <a href="#" className={styles.card}>
             <div className={styles.wrapper}>
               <img
                 src="https://ggayane.github.io/css-experiments/cards/force_mage-cover.jpg"
@@ -58,146 +99,129 @@ export default function PhimPage() {
             <img
               src="https://ggayane.github.io/css-experiments/cards/force_mage-character.webp"
               className={styles.character}
-              alt="Force Mage character"
+              alt="Character"
             />
           </a>
 
-          {/* 3 */}
-          <a href="#" target="_blank" rel="noreferrer" className={styles.card}>
+          {/* CARD 3 */}
+          <a href="#" className={styles.card}>
             <div className={styles.wrapper}>
               <img
                 src="/film/fantasy2.jpg"
                 className={styles.coverImage}
-                alt="Cover 3"
+                alt="Cover"
               />
             </div>
             <div className={styles.cardTitleBox}>
-              <span className={styles.cardTitle}>Chronos: Battle of Ages</span>
+              <span className={styles.cardTitle}>Chronos</span>
             </div>
             <img
               src="/film/fantasy2end.jpg"
               className={styles.character}
-              alt="Character 3"
+              alt="Character"
             />
           </a>
 
-          {/* 4 */}
-          <a href="#" target="_blank" rel="noreferrer" className={styles.card}>
+          {/* CARD 4 */}
+          <a href="#" className={styles.card}>
             <div className={styles.wrapper}>
               <img
                 src="/film/darkfantasy1.jpg"
                 className={styles.coverImage}
-                alt="Cover 4"
+                alt="Cover"
               />
             </div>
             <div className={styles.cardTitleBox}>
-              <span className={styles.cardTitle}>The Time Rift</span>
+              <span className={styles.cardTitle}>Time Rift</span>
             </div>
             <img
               src="/film/darkfantasy1end.jpg"
               className={styles.character}
-              alt="Character 4"
+              alt="Character"
             />
           </a>
 
-          {/* 5 */}
-          <a href="#" target="_blank" rel="noreferrer" className={styles.card}>
+          {/* CARD 5 */}
+          <a href="#" className={styles.card}>
             <div className={styles.wrapper}>
               <img
                 src="/film/fantasy3.jpg"
                 className={styles.coverImage}
-                alt="Cover 5"
+                alt="Cover"
               />
             </div>
             <div className={styles.cardTitleBox}>
-              <span className={styles.cardTitle}>System Override</span>
+              <span className={styles.cardTitle}>Override</span>
             </div>
             <img
               src="/film/fantasy3end.jpg"
               className={styles.character}
-              alt="Character 5"
+              alt="Character"
             />
           </a>
 
-          {/* 6 */}
-          <a href="#" target="_blank" rel="noreferrer" className={styles.card}>
+          {/* CARD 6 */}
+          <a href="#" className={styles.card}>
             <div className={styles.wrapper}>
               <img
                 src="/film/fantasy4.jpg"
                 className={styles.coverImage}
-                alt="Cover 6"
+                alt="Cover"
               />
             </div>
             <div className={styles.cardTitleBox}>
-              <span className={styles.cardTitle}>The Glitch Protocol</span>
+              <span className={styles.cardTitle}>Protocol</span>
             </div>
             <img
               src="/film/fantasy4end.jpg"
               className={styles.character}
-              alt="Character 6"
+              alt="Character"
             />
           </a>
 
-          {/* 7 */}
-          <a href="#" target="_blank" rel="noreferrer" className={styles.card}>
+          {/* CARD 7 */}
+          <a href="#" className={styles.card}>
             <div className={styles.wrapper}>
               <img
                 src="/film/fantasy5.jpg"
                 className={styles.coverImage}
-                alt="Cover 7"
+                alt="Cover"
               />
             </div>
             <div className={styles.cardTitleBox}>
-              <span className={styles.cardTitle}>Legends of the Void</span>
+              <span className={styles.cardTitle}>Void</span>
             </div>
             <img
               src="/film/fantasy5end.jpg"
               className={styles.character}
-              alt="Character 7"
+              alt="Character"
             />
           </a>
 
-          {/* 8 */}
-          <a href="#" target="_blank" rel="noreferrer" className={styles.card}>
+          {/* CARD 8 */}
+          <a href="#" className={styles.card}>
             <div className={styles.wrapper}>
               <img
                 src="/film/fantasy6.jpg"
                 className={styles.coverImage}
-                alt="Cover 8"
+                alt="Cover"
               />
             </div>
             <div className={styles.cardTitleBox}>
-              <span className={styles.cardTitle}>Shadows of War</span>
+              <span className={styles.cardTitle}>Shadows</span>
             </div>
             <img
               src="/film/fantasy6end.jpg"
               className={styles.character}
-              alt="Character 8"
-            />
-          </a>
-          {/* 8 */}
-          <a href="#" target="_blank" rel="noreferrer" className={styles.card}>
-            <div className={styles.wrapper}>
-              <img
-                src="/film/fantasy7.jpg"
-                className={styles.coverImage}
-                alt="Cover 8"
-              />
-            </div>
-            <div className={styles.cardTitleBox}>
-              <span className={styles.cardTitle}>Blood & Steel</span>
-            </div>
-            <img
-              src="/film/fantasy7end.jpg"
-              className={styles.character}
-              alt="Character 8"
+              alt="Character"
             />
           </a>
         </div>
       </main>
-      <footer>
+
+      <footer className={styles.footerScanner}>
         <FilmScanner />
       </footer>
-    </>
+    </div>
   );
 }

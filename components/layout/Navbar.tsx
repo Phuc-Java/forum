@@ -268,6 +268,21 @@ export default function Navbar() {
                 )}
               </span>
             </Link>
+            <Link
+              href="/chat"
+              className={`font-mono text-sm transition-all duration-300 relative hover:scale-105 ${
+                pathname === "/chat"
+                  ? "text-accent"
+                  : "text-foreground/70 hover:text-accent"
+              }`}
+            >
+              <span className="relative">
+                AI
+                {pathname === "/chat" && (
+                  <span className="absolute -bottom-1 left-0 right-0 h-0.5 bg-accent animate-fade-in rounded-full"></span>
+                )}
+              </span>
+            </Link>
             <div
               className="relative"
               onMouseEnter={openEvents}

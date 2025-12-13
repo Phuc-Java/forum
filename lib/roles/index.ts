@@ -101,6 +101,7 @@ export interface RolePermissions {
   canManageUsers: boolean;
   canAssignRoles: boolean;
   canAssignTags: boolean;
+  canUseAI?: boolean;
 }
 
 // Quyền hạn mặc định cho từng cấp bậc
@@ -120,6 +121,7 @@ export const ROLE_PERMISSIONS: Record<RoleType, RolePermissions> = {
     canManageUsers: false,
     canAssignRoles: false,
     canAssignTags: false,
+    canUseAI: false,
   },
   pham_nhan: {
     canRead: true,
@@ -136,6 +138,7 @@ export const ROLE_PERMISSIONS: Record<RoleType, RolePermissions> = {
     canManageUsers: false,
     canAssignRoles: false,
     canAssignTags: false,
+    canUseAI: false,
   },
   chi_cuong_gia: {
     canRead: true,
@@ -152,6 +155,7 @@ export const ROLE_PERMISSIONS: Record<RoleType, RolePermissions> = {
     canManageUsers: false,
     canAssignRoles: false,
     canAssignTags: false,
+    canUseAI: true,
   },
   thanh_nhan: {
     canRead: true,
@@ -168,6 +172,7 @@ export const ROLE_PERMISSIONS: Record<RoleType, RolePermissions> = {
     canManageUsers: false,
     canAssignRoles: false,
     canAssignTags: false,
+    canUseAI: true,
   },
   chi_ton: {
     canRead: true,
@@ -184,6 +189,7 @@ export const ROLE_PERMISSIONS: Record<RoleType, RolePermissions> = {
     canManageUsers: true,
     canAssignRoles: true,
     canAssignTags: true,
+    canUseAI: true,
   },
 };
 
