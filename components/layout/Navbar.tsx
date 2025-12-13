@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
@@ -27,6 +27,8 @@ export default function Navbar() {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
   const [showDropdown, setShowDropdown] = useState(false);
+  const [eventsOpen, setEventsOpen] = useState(false);
+  const eventsTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Check auth on mount and route change
   useEffect(() => {
@@ -109,6 +111,29 @@ export default function Navbar() {
       return () => document.removeEventListener("click", handleClickOutside);
     }
   }, [showDropdown]);
+
+  // Cleanup events timer on unmount
+  useEffect(() => {
+    return () => {
+      if (eventsTimer.current) clearTimeout(eventsTimer.current as any);
+    };
+  }, []);
+
+  const openEvents = () => {
+    if (eventsTimer.current) {
+      clearTimeout(eventsTimer.current as any);
+      eventsTimer.current = null;
+    }
+    setEventsOpen(true);
+  };
+
+  const closeEventsWithDelay = (delay = 300) => {
+    if (eventsTimer.current) clearTimeout(eventsTimer.current as any);
+    eventsTimer.current = setTimeout(() => {
+      setEventsOpen(false);
+      eventsTimer.current = null;
+    }, delay);
+  };
 
   const handleLogout = async () => {
     await logout();
@@ -243,21 +268,69 @@ export default function Navbar() {
                 )}
               </span>
             </Link>
-            <Link
-              href="/giang-sinh"
-              className={`font-mono text-sm transition-all duration-300 relative hover:scale-105 ${
-                pathname === "/giang-sinh"
-                  ? "text-primary"
-                  : "text-foreground/70 hover:text-primary"
-              }`}
+            <div
+              className="relative"
+              onMouseEnter={openEvents}
+              onMouseLeave={() => closeEventsWithDelay(300)}
             >
-              <span className="relative">
-                Giáng sinh
-                {pathname === "/giang-sinh" && (
-                  <span className="absolute -bottom-1 left-0 right-0 h-0.5 bg-primary animate-fade-in rounded-full"></span>
-                )}
-              </span>
-            </Link>
+              <button
+                onFocus={openEvents}
+                onBlur={() => closeEventsWithDelay(300)}
+                className={`font-mono text-sm transition-all duration-300 relative hover:scale-105 ${
+                  pathname?.startsWith("/events") || pathname === "/giang-sinh"
+                    ? "text-primary"
+                    : "text-foreground/70 hover:text-primary"
+                }`}
+                aria-haspopup="true"
+                aria-expanded={eventsOpen}
+              >
+                <span className="relative inline-flex items-center">
+                  Sự Kiện
+                  <span
+                    className="ml-2 w-2 h-2 rounded-full bg-primary animate-glow-pulse inline-block"
+                    aria-hidden="true"
+                  ></span>
+                  {pathname === "/giang-sinh" && (
+                    <span className="absolute -bottom-1 left-0 right-0 h-0.5 bg-primary animate-fade-in rounded-full"></span>
+                  )}
+                </span>
+              </button>
+
+              <div
+                className={`absolute left-0 top-full mt-2 w-56 bg-surface border border-border rounded-lg shadow-2xl overflow-hidden z-50 transform transition-all duration-250 ${
+                  eventsOpen
+                    ? "opacity-100 translate-y-0 visible"
+                    : "opacity-0 -translate-y-2 invisible"
+                }`}
+                onMouseEnter={openEvents}
+                onMouseLeave={() => closeEventsWithDelay(300)}
+              >
+                <Link
+                  href="/giang-sinh"
+                  className={`flex items-center px-5 py-3 font-mono text-sm text-foreground/80 hover:bg-primary/10 hover:text-primary transition-all duration-150 ${
+                    pathname === "/giang-sinh" ? "text-primary" : ""
+                  }`}
+                >
+                  <span
+                    className="mr-3 w-2 h-2 rounded-full bg-primary animate-glow-pulse inline-block"
+                    aria-hidden="true"
+                  ></span>
+                  <span>Giáng sinh</span>
+                </Link>
+                <Link
+                  href="/events/my-crush"
+                  className={`flex items-center px-5 py-3 font-mono text-sm text-foreground/80 hover:bg-primary/10 hover:text-primary transition-all duration-150 ${
+                    pathname === "/events/my-crush" ? "text-primary" : ""
+                  }`}
+                >
+                  <span
+                    className="mr-3 w-2 h-2 rounded-full bg-primary animate-glow-pulse inline-block"
+                    aria-hidden="true"
+                  ></span>
+                  <span>My Crush</span>
+                </Link>
+              </div>
+            </div>
             <Link
               href="/phim"
               className={`font-mono text-sm transition-all duration-300 relative hover:scale-105 ${

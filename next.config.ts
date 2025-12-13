@@ -1,5 +1,17 @@
 import type { NextConfig } from "next";
 
+// Optionally enable bundle analyzer when ANALYZE env var is set
+let withBundleAnalyzer: (cfg: NextConfig) => NextConfig = (x) => x;
+try {
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  const _b = require("@next/bundle-analyzer")({
+    enabled: process.env.ANALYZE === "true",
+  });
+  withBundleAnalyzer = _b;
+} catch {
+  // bundle-analyzer not installed — skip
+}
+
 const nextConfig: NextConfig = {
   // Tối ưu cho production VPS
   poweredByHeader: false,
@@ -46,4 +58,4 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default nextConfig;
+export default withBundleAnalyzer(nextConfig);

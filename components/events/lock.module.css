@@ -1,0 +1,96 @@
+.lockWrapper {
+  height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: radial-gradient(circle at 20% 10%, #111 0%, #000 60%);
+  color: #fff;
+}
+.lock {
+  background: #000;
+  border-radius: 8px;
+  padding: 14px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+  border-left: 1px solid rgba(255, 255, 255, 0.03);
+  box-shadow: -8px 8px 16px rgba(0, 0, 0, 0.6);
+}
+.screen {
+  background: #030303;
+  height: 48px;
+  position: relative;
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 10px;
+  border-radius: 6px;
+}
+.code {
+  font-family: "Share Tech Mono", monospace;
+  font-size: 1.05rem;
+  color: #fff;
+}
+.status {
+  font-family: "Share Tech Mono", monospace;
+  color: #f33;
+  text-shadow: 0 0 8px rgba(255, 0, 0, 0.2);
+}
+.rows {
+  display: flex;
+  gap: 8px;
+}
+.row {
+  width: 210px;
+  height: 50px;
+  overflow: hidden;
+  position: relative;
+  display: flex;
+  gap: 6px;
+}
+.cell {
+  background: linear-gradient(45deg, #0b0b0b, #101010);
+  width: 56px;
+  height: 50px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: transform 0.12s ease, box-shadow 0.12s ease;
+}
+.cell:hover {
+  transform: translateY(-4px);
+}
+.text {
+  font-family: "Orbitron", monospace;
+  font-size: 1.1rem;
+  color: rgba(255, 255, 255, 0.4);
+  transition: all 0.12s ease;
+}
+.isSelected .text {
+  color: #19ffb0;
+  transform: scale(1.05);
+  opacity: 1;
+}
+.info {
+  margin-top: 12px;
+  font-family: "Share Tech Mono", monospace;
+  color: #9aa1a6;
+  text-align: center;
+}
+.unlockedContent {
+  max-width: 900px;
+  padding: 40px;
+  background: rgba(10, 20, 18, 0.6);
+  border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
+}
+.pulseDot {
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  background: #19ffb0;
+  box-shadow: 0 0 12px #19ffb0;
+  display: inline-block;
+  margin-left: 8px;
+}
