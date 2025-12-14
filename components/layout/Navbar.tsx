@@ -262,7 +262,7 @@ export default function Navbar() {
               }`}
             >
               <span className="relative">
-                Shop
+                Tàng kinh Các
                 {pathname === "/shop" && (
                   <span className="absolute -bottom-1 left-0 right-0 h-0.5 bg-primary animate-fade-in rounded-full"></span>
                 )}
@@ -354,7 +354,7 @@ export default function Navbar() {
                     className="mr-3 w-2 h-2 rounded-full bg-primary animate-glow-pulse inline-block"
                     aria-hidden="true"
                   ></span>
-                  <span>Kiếm Tiền</span>
+                  <span>Thiên Cơ Lâu</span>
                 </Link>
                 <Link
                   href="/gallery"
@@ -366,7 +366,7 @@ export default function Navbar() {
                     className="mr-3 w-2 h-2 rounded-full bg-primary animate-glow-pulse inline-block"
                     aria-hidden="true"
                   ></span>
-                  <span>Gallery</span>
+                  <span>Mỹ Nhân</span>
                 </Link>
               </div>
             </div>
