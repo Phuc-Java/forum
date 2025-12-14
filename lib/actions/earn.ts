@@ -34,7 +34,7 @@ export async function getGameHistory(userId: string) {
   }
 }
 
-// GAME 1: VÒNG QUAY NHÂN PHẨM (GIỮ NGUYÊN TỈ LỆ CŨ)
+// GAME 1: VÒNG QUAY NHÂN PHẨM
 export async function spinWheel(userId: string) {
   try {
     const client = getAdminClient();
@@ -49,14 +49,12 @@ export async function spinWheel(userId: string) {
     if (profileRes.documents.length === 0) return { error: "Lỗi hồ sơ" };
     const profile = profileRes.documents[0];
 
-    if (profile.currency < cost)
-      return { error: "Không đủ linh thạch để quay!" };
+    // 🔥 FIX 1: Ép kiểu String -> Number để so sánh và tính toán
+    const currentBalance = Number(profile.currency) || 0;
 
-    // Tỉ lệ cũ:
-    // 5% : Jackpot (30k)
-    // 15%: Địa Phẩm (10k)
-    // 30%: Huyền Phẩm (2k)
-    // 50%: Linh Tinh (100)
+    if (currentBalance < cost) return { error: "Không đủ linh thạch để quay!" };
+
+    // Tỉ lệ rơi đồ
     const rand = Math.random();
     let reward = 0;
     let resultText = "Chúc may mắn lần sau";
@@ -80,13 +78,15 @@ export async function spinWheel(userId: string) {
       type = "trash";
     }
 
-    const newBalance = profile.currency - cost + reward;
+    // 🔥 FIX 2: Tính toán trên Số
+    const newBalance = currentBalance - cost + reward;
 
+    // 🔥 FIX 3: Ép kiểu Number -> String để lưu vào DB
     await databases.updateDocument(
       APPWRITE_CONFIG.databaseId,
       "profiles",
       profile.$id,
-      { currency: newBalance }
+      { currency: String(newBalance) }
     );
 
     await databases.createDocument(
@@ -103,13 +103,14 @@ export async function spinWheel(userId: string) {
     );
 
     revalidatePath("/earn");
+    // Trả về số để UI hiển thị dễ dàng
     return { success: true, reward, resultText, newBalance, type };
   } catch (error: any) {
     return { error: "Lỗi server: " + error.message };
   }
 }
 
-// GAME 2: ĐÀO MỎ (MINING) - ĐÃ SỬA TỈ LỆ 7-10
+// GAME 2: ĐÀO MỎ (MINING)
 export async function mineSpiritStone(userId: string) {
   try {
     const client = getAdminClient();
@@ -122,19 +123,26 @@ export async function mineSpiritStone(userId: string) {
     );
     const profile = profileRes.documents[0];
 
+    // 🔥 FIX 1: Ép kiểu String -> Number
+    const currentBalance = Number(profile.currency) || 0;
+
     // Random reward: 7 - 10
     const baseReward = Math.floor(Math.random() * 4) + 7;
 
-    // Tỉ lệ bạo kích (Crit) 1% nhân 10 (Giữ sự bất ngờ)
+    // Tỉ lệ bạo kích (Crit) 1% nhân 10
     const isCritical = Math.random() < 0.01;
     const finalReward = isCritical ? baseReward * 10 : baseReward;
 
+    // 🔥 FIX 2: Tính toán cộng số (Tránh lỗi cộng chuỗi "1000" + 10 = "100010")
+    const newBalance = currentBalance + finalReward;
+
+    // 🔥 FIX 3: Ép kiểu Number -> String để lưu vào DB
     await databases.updateDocument(
       APPWRITE_CONFIG.databaseId,
       "profiles",
       profile.$id,
       {
-        currency: profile.currency + finalReward,
+        currency: String(newBalance),
       }
     );
 
@@ -159,14 +167,14 @@ export async function mineSpiritStone(userId: string) {
       success: true,
       reward: finalReward,
       isCritical,
-      newBalance: profile.currency + finalReward,
+      newBalance: newBalance, // Trả về số cho UI
     };
   } catch (error: any) {
     return { error: error.message };
   }
 }
 
-// GAME 3: MỞ RƯƠNG (MYSTERY BOX) - GIỮ NGUYÊN
+// GAME 3: MỞ RƯƠNG (MYSTERY BOX)
 export async function openMysteryBox(userId: string) {
   try {
     const client = getAdminClient();
@@ -180,10 +188,13 @@ export async function openMysteryBox(userId: string) {
     );
     const profile = profileRes.documents[0];
 
-    if (profile.currency < cost)
+    // 🔥 FIX 1: Ép kiểu String -> Number
+    const currentBalance = Number(profile.currency) || 0;
+
+    if (currentBalance < cost)
       return { error: "Cần 5,000 Linh Thạch để mua chìa khóa!" };
 
-    // Logic Gacha: High Risk High Return (Giữ nguyên tỉ lệ cũ)
+    // Logic Gacha
     const rand = Math.random();
     let reward = 0;
     let tier = "trash"; // common
@@ -205,12 +216,16 @@ export async function openMysteryBox(userId: string) {
       tier = "trash";
     } // 60%
 
+    // 🔥 FIX 2: Tính toán trên số
+    const newBalance = currentBalance - cost + reward;
+
+    // 🔥 FIX 3: Ép kiểu Number -> String để lưu vào DB
     await databases.updateDocument(
       APPWRITE_CONFIG.databaseId,
       "profiles",
       profile.$id,
       {
-        currency: profile.currency - cost + reward,
+        currency: String(newBalance),
       }
     );
 
@@ -232,7 +247,7 @@ export async function openMysteryBox(userId: string) {
       success: true,
       reward,
       tier,
-      newBalance: profile.currency - cost + reward,
+      newBalance: newBalance, // Trả về số cho UI
     };
   } catch (error: any) {
     return { error: error.message };

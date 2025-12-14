@@ -44,14 +44,20 @@ export async function claimNewbieGift(userId: string) {
     else if (role === "chi_ton") rewardAmount = 10000; // Admin ưu đãi tí
 
     // 4. Update Database (Cộng tiền + Đánh dấu đã nhận)
-    const newBalance = (profile.currency || 0) + rewardAmount;
+
+    // 🔥 FIX 1: Ép kiểu String từ DB sang Number để cộng
+    const currentBalance = Number(profile.currency) || 0;
+
+    // Thực hiện phép cộng số học
+    const newBalance = currentBalance + rewardAmount;
 
     await databases.updateDocument(
       APPWRITE_CONFIG.databaseId,
       "profiles",
       profile.$id,
       {
-        currency: newBalance,
+        // 🔥 FIX 2: Ép kiểu Number về String để lưu vào DB
+        currency: String(newBalance),
         hasClaimedGift: true,
       }
     );
@@ -73,6 +79,7 @@ export async function getCurrentProfile(userId: string) {
       "profiles",
       [Query.equal("userId", userId), Query.limit(1)]
     );
+    // Trả về raw profile, client sẽ tự handle việc hiển thị currency string
     return profileRes.documents[0] || null;
   } catch {
     return null;

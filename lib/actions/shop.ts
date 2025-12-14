@@ -28,13 +28,12 @@ function getAdminClient() {
   return client;
 }
 
-// --- GET PRODUCT BY ID (FIX LỖI 404) ---
+// --- GET PRODUCT BY ID ---
 export async function getProductById(productId: string) {
   try {
     const client = getAdminClient();
     const databases = new Databases(client);
 
-    // FIX: Bỏ đoạn check length > 36 đi vì nó gây lỗi nếu ID ngắn hơn hoặc params chưa load kịp
     if (!productId) {
       return { success: false, error: "ID không tồn tại." };
     }
@@ -87,7 +86,7 @@ export async function getProducts(
   }
 }
 
-// --- CREATE PRODUCT (FIX LỖI LEVEL) ---
+// --- CREATE PRODUCT ---
 export async function createProduct(formData: FormData) {
   const name = formData.get("name") as string;
   const description = formData.get("description") as string;
@@ -114,12 +113,8 @@ export async function createProduct(formData: FormData) {
     const sellerProfile = profileRes.documents[0];
     const sellerRole = (sellerProfile.role as RoleType) || "pham_nhan";
 
-    // --- FIX LỖI Ở ĐÂY ---
-    // Trước đó: ROLE_LEVELS[sellerRole]?.level (Sai vì ROLE_LEVELS trả về số, số không có .level)
-    // Sửa lại: ROLE_LEVELS[sellerRole] (Lấy trực tiếp giá trị số)
     const userLevel = ROLE_LEVELS[sellerRole] || 1;
 
-    // Debug log để chắc chắn (Check server logs nếu cần)
     console.log(
       `User: ${sellerProfile.displayName}, Role: ${sellerRole}, Level: ${userLevel}`
     );
@@ -138,7 +133,6 @@ export async function createProduct(formData: FormData) {
         ID.unique(),
         imageFile
       );
-      // Dùng endpoint view để xem ảnh nhanh
       const url = `${APPWRITE_CONFIG.endpoint}/storage/buckets/${SHOP_BUCKET_ID}/files/${upload.$id}/view?project=${APPWRITE_CONFIG.projectId}`;
       imageUrls.push(url);
     } else {
@@ -173,7 +167,7 @@ export async function createProduct(formData: FormData) {
   }
 }
 
-// Update Product (Giữ nguyên)
+// Update Product
 export async function updateProduct(
   productId: string,
   formData: FormData,
@@ -206,7 +200,8 @@ export async function updateProduct(
     return { success: false, error: "Lỗi cập nhật." };
   }
 }
-// --- DELETE PRODUCT (NEW: CHỨC NĂNG XÓA) ---
+
+// --- DELETE PRODUCT ---
 export async function deleteProduct(productId: string, userId: string) {
   try {
     const client = getAdminClient();
@@ -233,9 +228,7 @@ export async function deleteProduct(productId: string, userId: string) {
       productId
     );
 
-    // 3. Check Quyền: Phải là Chủ sở hữu HOẶC Chí Tôn (Level 5)
-    // Lưu ý: Logic đạo hữu yêu cầu là "Chỉ Chí Tôn", nhưng thường chủ bài viết cũng được xóa.
-    // Ta sẽ để ưu tiên Chí Tôn xóa tất cả, Chủ bài xóa bài mình.
+    // 3. Check Quyền
     const isChiTon = userRole === "chi_ton";
     const isOwner = product.sellerId === userId;
 
@@ -246,17 +239,7 @@ export async function deleteProduct(productId: string, userId: string) {
       };
     }
 
-    // 4. Xóa ảnh trong Storage (Dọn rác)
-    try {
-      const images = JSON.parse(product.images);
-      if (Array.isArray(images)) {
-        // Logic này cần parse File ID từ URL nếu muốn xóa triệt để.
-        // Tạm thời ta bỏ qua bước này để tránh lỗi nếu URL không chuẩn Appwrite ID.
-        // Nếu đạo hữu cần, ta sẽ thêm hàm extract File ID.
-      }
-    } catch {}
-
-    // 5. Xóa Document
+    // 4. Xóa Document
     await databases.deleteDocument(
       APPWRITE_CONFIG.databaseId,
       "products",
@@ -269,6 +252,7 @@ export async function deleteProduct(productId: string, userId: string) {
     return { success: false, error: "Lỗi Server: " + error.message };
   }
 }
+
 // 1. Thêm vào giỏ hàng
 export async function addToCart(userId: string, productId: string) {
   try {
@@ -278,7 +262,7 @@ export async function addToCart(userId: string, productId: string) {
     // Kiểm tra xem đã có trong giỏ chưa
     const existing = await databases.listDocuments(
       APPWRITE_CONFIG.databaseId,
-      "carts", // Nhớ tạo collection này
+      "carts",
       [Query.equal("userId", userId), Query.equal("productId", productId)]
     );
 
@@ -312,13 +296,12 @@ export async function addToCart(userId: string, productId: string) {
   }
 }
 
-// 2. Lấy danh sách giỏ hàng (kèm thông tin sản phẩm)
+// 2. Lấy danh sách giỏ hàng
 export async function getCartItems(userId: string) {
   try {
     const client = getAdminClient();
     const databases = new Databases(client);
 
-    // Lấy list cart items
     const cartRes = await databases.listDocuments(
       APPWRITE_CONFIG.databaseId,
       "carts",
@@ -327,7 +310,6 @@ export async function getCartItems(userId: string) {
 
     if (cartRes.documents.length === 0) return { success: true, items: [] };
 
-    // Lấy chi tiết từng sản phẩm (Promise.all để nhanh hơn)
     const itemsWithProduct = await Promise.all(
       cartRes.documents.map(async (cartItem) => {
         try {
@@ -338,13 +320,11 @@ export async function getCartItems(userId: string) {
           );
           return { ...cartItem, product };
         } catch {
-          // Nếu sản phẩm bị xóa, trả về null để lọc sau
           return null;
         }
       })
     );
 
-    // Lọc bỏ các item null (sản phẩm đã bị xóa khỏi shop)
     return {
       success: true,
       items: itemsWithProduct.filter((item) => item !== null),
@@ -366,6 +346,7 @@ export async function removeFromCart(cartId: string) {
     return { success: false, error: "Không thể xóa vật phẩm" };
   }
 }
+
 // ==========================================
 // PHẦN MỚI: HỆ THỐNG THANH TOÁN (CHECKOUT)
 // ==========================================
@@ -391,21 +372,25 @@ export async function processCheckout(userId: string) {
     if (cartRes.documents.length === 0) throw new Error("Giỏ hàng trống rỗng.");
 
     const profile = profileRes.documents[0];
-    const currentBalance = profile.currency || 0;
+
+    // 🔥 FIX 1: Ép kiểu từ String DB sang Number để tính toán
+    // Nếu currency là "1000", Number("1000") = 1000
+    const currentBalance = Number(profile.currency) || 0;
+
     const cartItems = cartRes.documents;
 
-    // 2. Tính tổng tiền (Cần fetch giá mới nhất từ Product để tránh hack giá)
+    // 2. Tính tổng tiền
     let totalAmount = 0;
     const orderItems = [];
 
     for (const item of cartItems) {
-      // Lấy giá gốc từ product ID
       const product = await databases.getDocument(
         APPWRITE_CONFIG.databaseId,
         "products",
         item.productId
       );
 
+      // Giá sản phẩm vẫn là số (Integer/Float)
       const itemTotal = product.price * item.quantity;
       totalAmount += itemTotal;
 
@@ -418,27 +403,32 @@ export async function processCheckout(userId: string) {
       });
     }
 
-    // 3. Kiểm tra số dư (Balance Check)
+    // 3. Kiểm tra số dư
     if (currentBalance < totalAmount) {
       return {
         success: false,
-        error: `Không đủ linh thạch! Cần ${totalAmount} nhưng chỉ có ${currentBalance}.`,
+        error: `Không đủ linh thạch! Cần ${totalAmount.toLocaleString()} nhưng chỉ có ${currentBalance.toLocaleString()}.`,
       };
     }
 
-    // 4. THỰC HIỆN GIAO DỊCH (Transaction)
-    // A. Trừ tiền
+    // 4. THỰC HIỆN GIAO DỊCH
+    // A. Trừ tiền (Tính toán số học)
+    const newBalance = currentBalance - totalAmount;
+
     await databases.updateDocument(
       APPWRITE_CONFIG.databaseId,
       "profiles",
       profile.$id,
-      { currency: currentBalance - totalAmount }
+      {
+        // 🔥 FIX 2: Ép kiểu từ Number về String để lưu vào DB
+        currency: String(newBalance),
+      }
     );
 
-    // B. Tạo đơn hàng (Lưu lịch sử)
+    // B. Tạo đơn hàng
     await databases.createDocument(
       APPWRITE_CONFIG.databaseId,
-      "orders", // Nhớ tạo collection này
+      "orders",
       ID.unique(),
       {
         userId,
@@ -455,7 +445,8 @@ export async function processCheckout(userId: string) {
       )
     );
 
-    return { success: true, newBalance: currentBalance - totalAmount };
+    // Trả về số để UI hiển thị dễ dàng
+    return { success: true, newBalance: newBalance };
   } catch (error: any) {
     console.error("Checkout Error:", error);
     return { success: false, error: "Lỗi giao dịch: " + error.message };
@@ -473,7 +464,9 @@ export async function getUserBalance(userId: string) {
       [Query.equal("userId", userId), Query.limit(1)]
     );
     if (profileRes.documents.length > 0) {
-      return { success: true, balance: profileRes.documents[0].currency || 0 };
+      // 🔥 FIX 3: Ép kiểu String từ DB sang Number cho Frontend hiển thị
+      const balanceNum = Number(profileRes.documents[0].currency);
+      return { success: true, balance: isNaN(balanceNum) ? 0 : balanceNum };
     }
     return { success: true, balance: 0 };
   } catch {

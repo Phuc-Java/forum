@@ -1,14 +1,14 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence, useAnimation } from "framer-motion";
 import { Client, Account, Databases, Query } from "appwrite";
 import { APPWRITE_CONFIG } from "@/lib/appwrite/config";
 import { spinWheel, mineSpiritStone, openMysteryBox } from "@/lib/actions/earn";
 import confetti from "canvas-confetti";
-import Link from "next/link"; // Cần import Link
+import Link from "next/link";
 
-// --- UTILS (Giữ nguyên) ---
+// --- UTILS ---
 const playSound = (
   type: "click" | "win" | "spin" | "crack" | "error" | "alert"
 ) => {
@@ -22,7 +22,6 @@ const triggerConfetti = (tier: string) => {
       ? ["#FFD700", "#FFA500", "#FFFFFF"]
       : ["#10B981", "#34D399"];
   const particleCount = tier === "legendary" ? 200 : 80;
-
   confetti({
     particleCount,
     spread: 120,
@@ -32,17 +31,13 @@ const triggerConfetti = (tier: string) => {
   });
 };
 
-// ==========================================
-// 👇 UI MỚI: NÚT QUAY LẠI (PORTAL BUTTON) 👇
-// ==========================================
+// --- SUB COMPONENTS (Giữ nguyên UI đạo hữu đã có) ---
 const BackToLobbyBtn = ({ onClick }: { onClick: () => void }) => (
   <button
     onClick={onClick}
     className="absolute top-0 left-0 z-30 group flex items-center gap-3 pl-2 pr-6 py-2 bg-black/40 hover:bg-black/80 backdrop-blur-md border border-white/10 hover:border-white/30 rounded-r-full transition-all duration-300 hover:shadow-[0_0_20px_rgba(255,255,255,0.1)] overflow-hidden"
   >
-    {/* Hiệu ứng quét sáng */}
     <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:animate-[shimmer_1.5s_infinite]"></div>
-
     <div className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center border border-white/10 group-hover:scale-110 transition-transform text-gray-400 group-hover:text-white">
       <svg
         xmlns="http://www.w3.org/2000/svg"
@@ -70,9 +65,6 @@ const BackToLobbyBtn = ({ onClick }: { onClick: () => void }) => (
   </button>
 );
 
-// ==========================================
-// 👇 UI MỚI: CẢNH BÁO HẾT TIỀN (NO MONEY) 👇
-// ==========================================
 const NoMoneyConsole = ({
   onClose,
   onGoToMine,
@@ -81,7 +73,6 @@ const NoMoneyConsole = ({
   onGoToMine: () => void;
 }) => (
   <div className="fixed inset-0 z-[150] flex items-center justify-center px-4">
-    {/* Backdrop đỏ cảnh báo */}
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
@@ -89,16 +80,13 @@ const NoMoneyConsole = ({
       className="absolute inset-0 bg-red-950/80 backdrop-blur-md"
       onClick={onClose}
     />
-
     <motion.div
       initial={{ scale: 0.8, opacity: 0, rotateX: 20 }}
       animate={{ scale: 1, opacity: 1, rotateX: 0 }}
       exit={{ scale: 0.8, opacity: 0, rotateX: -20 }}
       className="relative w-full max-w-md bg-[#0f0505] border-2 border-red-600/50 rounded-3xl p-8 shadow-[0_0_100px_rgba(220,38,38,0.4)] overflow-hidden text-center"
     >
-      {/* Scanlines Effect */}
       <div className="absolute inset-0 bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.25)_50%),linear-gradient(90deg,rgba(255,0,0,0.06),rgba(0,255,0,0.02),rgba(0,0,255,0.06))] z-0 bg-[length:100%_2px,3px_100%] pointer-events-none"></div>
-
       <div className="relative z-10">
         <motion.div
           animate={{ rotate: [0, 10, -10, 0], scale: [1, 1.1, 1] }}
@@ -107,11 +95,9 @@ const NoMoneyConsole = ({
         >
           💸
         </motion.div>
-
         <h2 className="text-3xl font-black text-red-500 uppercase tracking-widest mb-2 glitch-text">
           NGÂN KHỐ CẠN KIỆT!
         </h2>
-
         <div className="bg-red-900/20 border border-red-500/30 p-4 rounded-xl mb-6">
           <p className="text-red-200 text-sm font-mono">
             Đạo hữu không đủ Linh Thạch để thực hiện giao dịch này.
@@ -119,7 +105,6 @@ const NoMoneyConsole = ({
             Vui lòng bổ sung linh lực.
           </p>
         </div>
-
         <div className="flex flex-col gap-3">
           <button
             onClick={onGoToMine}
@@ -128,7 +113,6 @@ const NoMoneyConsole = ({
             <span>⛏️</span>
             <span>ĐI ĐÀO MỎ NGAY (Miễn phí)</span>
           </button>
-
           <button
             onClick={onClose}
             className="w-full py-3 text-gray-500 hover:text-white font-mono text-xs uppercase tracking-widest hover:bg-white/5 rounded-lg transition-colors"
@@ -141,12 +125,8 @@ const NoMoneyConsole = ({
   </div>
 );
 
-// ==========================================
-// 👇 UI MỚI: MODAL YÊU CẦU ĐĂNG NHẬP 👇
-// ==========================================
 const LoginConsole = ({ onClose }: { onClose: () => void }) => (
   <div className="fixed inset-0 z-[200] flex items-center justify-center px-4 font-sans">
-    {/* Backdrop mờ tối */}
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
@@ -154,29 +134,22 @@ const LoginConsole = ({ onClose }: { onClose: () => void }) => (
       className="absolute inset-0 bg-black/90 backdrop-blur-md"
       onClick={onClose}
     />
-
     <motion.div
       initial={{ scale: 0.9, opacity: 0, y: 50 }}
       animate={{ scale: 1, opacity: 1, y: 0 }}
       exit={{ scale: 0.9, opacity: 0, y: 50 }}
       className="relative w-full max-w-md bg-[#050505] border border-cyan-500/30 rounded-3xl p-8 shadow-[0_0_80px_rgba(6,182,212,0.15)] overflow-hidden"
     >
-      {/* Background Effects */}
       <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-10 pointer-events-none"></div>
       <div className="absolute top-0 right-0 w-64 h-64 bg-cyan-500/10 rounded-full blur-[80px] pointer-events-none"></div>
-
       <div className="relative z-10 flex flex-col items-center text-center">
-        {/* Icon Khóa */}
         <div className="w-20 h-20 bg-cyan-900/20 rounded-full flex items-center justify-center mb-6 border border-cyan-500/30 shadow-[0_0_20px_rgba(6,182,212,0.2)]">
           <span className="text-4xl animate-pulse">🔒</span>
         </div>
-
         <h2 className="text-2xl font-black text-white uppercase tracking-wider mb-2">
           YÊU CẦU ĐỊNH DANH
         </h2>
-
         <div className="h-1 w-12 bg-cyan-500 rounded-full mb-6"></div>
-
         <p className="text-gray-400 text-sm mb-8 leading-relaxed max-w-xs">
           Khu vực <span className="text-cyan-400 font-bold">Thiên Cơ Lâu</span>{" "}
           chứa nhiều bí mật thiên địa, chỉ dành cho các tu sĩ đã nhập môn.
@@ -184,7 +157,6 @@ const LoginConsole = ({ onClose }: { onClose: () => void }) => (
           <br />
           Vui lòng đăng nhập để thử vận may.
         </p>
-
         <div className="flex flex-col gap-3 w-full">
           <Link href="/login" className="w-full">
             <button className="w-full py-4 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white font-bold rounded-xl shadow-lg shadow-cyan-900/40 transition-all flex items-center justify-center gap-2 group relative overflow-hidden">
@@ -193,7 +165,6 @@ const LoginConsole = ({ onClose }: { onClose: () => void }) => (
               <span>ĐĂNG NHẬP NGAY</span>
             </button>
           </Link>
-
           <button
             onClick={onClose}
             className="w-full py-3 text-gray-500 hover:text-white font-mono text-xs uppercase tracking-widest hover:bg-white/5 rounded-lg transition-colors border border-transparent hover:border-white/10"
@@ -206,14 +177,10 @@ const LoginConsole = ({ onClose }: { onClose: () => void }) => (
   </div>
 );
 
-// ... [GIỮ NGUYÊN LuckyWheel, MiningGame, MysteryBox] ...
-// (Để tiết kiệm dung lượng hiển thị, tôi ẩn phần code cũ đã viết ở trên,
-// Đạo hữu hãy giữ nguyên 3 component LuckyWheel, MiningGame, MysteryBox ở file cũ nhé)
-
+// --- GAMES ---
 const LuckyWheel = ({ onPlay, isProcessing }: any) => {
   const controls = useAnimation();
   const [rotation, setRotation] = useState(0);
-
   const handleSpin = async () => {
     if (isProcessing) return;
     playSound("spin");
@@ -227,7 +194,6 @@ const LuckyWheel = ({ onPlay, isProcessing }: any) => {
     setRotation(targetRotation);
     onPlay();
   };
-
   return (
     <div className="flex flex-col items-center justify-center h-full">
       <div className="relative w-72 h-72 mb-10 group">
@@ -305,12 +271,12 @@ const MiningGame = ({ onPlay, isProcessing }: any) => {
                 initial={{ opacity: 1, y: effect.y, x: effect.x, scale: 0.5 }}
                 animate={{
                   opacity: 0,
-                  y: effect.y - 150,
+                  y: effect.y - 100,
                   scale: 1.5,
                   rotate: Math.random() * 20 - 10,
                 }}
                 exit={{ opacity: 0 }}
-                className="absolute text-emerald-300 font-black font-mono text-3xl z-20 pointer-events-none drop-shadow-[0_2px_2px_rgba(0,0,0,0.8)]"
+                className="absolute text-emerald-400 font-bold font-mono text-2xl z-20 pointer-events-none"
               >
                 {effect.val}
               </motion.span>
@@ -320,16 +286,12 @@ const MiningGame = ({ onPlay, isProcessing }: any) => {
         <div className="absolute -bottom-6 left-1/2 -translate-x-1/2 w-48 h-12 bg-emerald-500/20 blur-2xl rounded-full opacity-0 group-active:opacity-100 transition-opacity duration-100"></div>
       </div>
       <div className="mt-10 text-center">
-        <h3 className="text-2xl font-bold text-white mb-2 uppercase tracking-wide">
-          Mỏ Linh Thạch
-        </h3>
-        <div className="inline-block bg-emerald-900/30 px-4 py-2 rounded-xl border border-emerald-500/20 backdrop-blur-md">
-          <p className="text-emerald-400 font-mono text-sm font-bold">
-            Thu nhập: 7 - 10 💎 / Click
-          </p>
-        </div>
-        <p className="text-gray-500 text-xs mt-3 italic opacity-60">
-          *Có 1% cơ hội bạo kích x10 sản lượng
+        <h3 className="text-2xl font-bold text-white mb-1">Mỏ Linh Thạch</h3>
+        <p className="text-emerald-400 font-mono text-sm bg-emerald-900/20 px-3 py-1 rounded-lg border border-emerald-500/20">
+          Thu nhập: 7 - 10 💎 / Click
+        </p>
+        <p className="text-gray-500 text-xs mt-2 italic">
+          *Có 1% cơ hội bạo kích x10
         </p>
       </div>
     </div>
@@ -421,10 +383,8 @@ export default function GameGrid() {
     reward: number;
     type: string;
   } | null>(null);
-
-  // State quản lý UI
   const [showNoMoney, setShowNoMoney] = useState(false);
-  const [showLogin, setShowLogin] = useState(false); // <--- STATE MỚI: Login Console
+  const [showLogin, setShowLogin] = useState(false);
 
   useEffect(() => {
     const init = async () => {
@@ -436,14 +396,16 @@ export default function GameGrid() {
         const databases = new Databases(client);
         const user = await account.get();
         setUserId(user.$id);
-
         const profileRes = await databases.listDocuments(
           APPWRITE_CONFIG.databaseId,
           "profiles",
           [Query.equal("userId", user.$id)]
         );
-        if (profileRes.documents.length > 0)
-          setBalance(profileRes.documents[0].currency || 0);
+        if (profileRes.documents.length > 0) {
+          // 🔥 FIX QUAN TRỌNG: Ép kiểu String -> Number khi load từ DB để hiển thị và tính toán đúng ở Client
+          const val = profileRes.documents[0].currency;
+          setBalance(Number(val) || 0);
+        }
       } catch {}
     };
     init();
@@ -452,6 +414,7 @@ export default function GameGrid() {
   const handleResult = (res: any) => {
     setTimeout(() => {
       if (res.success) {
+        // 🔥 FIX QUAN TRỌNG: Server trả về newBalance là Number (nhờ file earn.ts đã sửa), ta set thẳng vào state
         setBalance(res.newBalance);
         const type =
           res.tier || res.type || (res.reward > 5000 ? "legendary" : "common");
@@ -461,7 +424,6 @@ export default function GameGrid() {
           reward: res.reward,
           type,
         });
-
         if (res.reward > 1000) playSound("win");
         if (type === "legendary" || type === "epic") triggerConfetti(type);
       } else {
@@ -472,18 +434,16 @@ export default function GameGrid() {
   };
 
   const playGame = async (gameType: string) => {
-    // CHECK ĐĂNG NHẬP (Logic mới)
     if (!userId) {
       playSound("alert");
-      setShowLogin(true); // <--- KÍCH HOẠT LOGIN CONSOLE
+      setShowLogin(true);
       return;
     }
-
-    // CHECK TIỀN
     let cost = 0;
     if (gameType === "wheel") cost = 500;
     if (gameType === "box") cost = 5000;
 
+    // 🔥 Balance giờ đã là Number nên so sánh chính xác
     if (balance < cost) {
       playSound("error");
       setShowNoMoney(true);
@@ -495,13 +455,12 @@ export default function GameGrid() {
     if (gameType === "wheel") res = await spinWheel(userId);
     else if (gameType === "mining") res = await mineSpiritStone(userId);
     else if (gameType === "box") res = await openMysteryBox(userId);
-
     handleResult(res);
   };
 
   return (
     <div className="w-full max-w-7xl mx-auto">
-      {/* --- HUD: SỐ DƯ --- */}
+      {/* HUD Balance */}
       <div className="fixed top-24 right-6 z-50 animate-fade-in-left">
         <div className="bg-black/80 backdrop-blur-xl border border-amber-500/30 px-6 py-3 rounded-full shadow-[0_0_30px_rgba(245,158,11,0.2)] flex items-center gap-4 hover:border-amber-500/60 transition-all hover:scale-105 cursor-default group">
           <div className="flex flex-col items-end">
@@ -519,7 +478,7 @@ export default function GameGrid() {
         </div>
       </div>
 
-      {/* --- MODAL: KHÔNG ĐỦ TIỀN --- */}
+      {/* Modals */}
       <AnimatePresence>
         {showNoMoney && (
           <NoMoneyConsole
@@ -531,13 +490,9 @@ export default function GameGrid() {
           />
         )}
       </AnimatePresence>
-
-      {/* --- MODAL: YÊU CẦU ĐĂNG NHẬP (MỚI) --- */}
       <AnimatePresence>
         {showLogin && <LoginConsole onClose={() => setShowLogin(false)} />}
       </AnimatePresence>
-
-      {/* --- MODAL: KẾT QUẢ --- */}
       <AnimatePresence>
         {result && result.show && (
           <div
@@ -554,16 +509,15 @@ export default function GameGrid() {
               initial={{ scale: 0.5, y: 100 }}
               animate={{ scale: 1, y: 0 }}
               exit={{ scale: 0.5, opacity: 0 }}
-              className={`relative bg-[#111] border-2 rounded-[2.5rem] p-12 text-center shadow-[0_0_100px_rgba(0,0,0,0.8)] overflow-hidden max-w-sm w-full
-                            ${
-                              result.type === "legendary"
-                                ? "border-yellow-500 shadow-yellow-500/40"
-                                : result.type === "epic"
-                                ? "border-purple-500 shadow-purple-500/40"
-                                : result.type === "rare"
-                                ? "border-blue-500 shadow-blue-500/40"
-                                : "border-gray-600 shadow-gray-600/40"
-                            }`}
+              className={`relative bg-[#111] border-2 rounded-[2.5rem] p-12 text-center shadow-[0_0_100px_rgba(0,0,0,0.8)] overflow-hidden max-w-sm w-full ${
+                result.type === "legendary"
+                  ? "border-yellow-500 shadow-yellow-500/40"
+                  : result.type === "epic"
+                  ? "border-purple-500 shadow-purple-500/40"
+                  : result.type === "rare"
+                  ? "border-blue-500 shadow-blue-500/40"
+                  : "border-gray-600 shadow-gray-600/40"
+              }`}
               onClick={(e) => e.stopPropagation()}
             >
               <div
@@ -573,7 +527,6 @@ export default function GameGrid() {
                     : "from-gray-500"
                 } to-transparent pointer-events-none`}
               ></div>
-
               <div className="relative z-10">
                 <motion.div
                   animate={{ rotate: [0, 10, -10, 0], scale: [1, 1.2, 1] }}
@@ -588,11 +541,9 @@ export default function GameGrid() {
                     ? "🔵"
                     : "⚪"}
                 </motion.div>
-
                 <h2 className="text-3xl font-black text-white uppercase italic mb-4 tracking-wide">
                   {result.msg}
                 </h2>
-
                 <div className="bg-black/50 rounded-2xl p-4 mb-8 border border-white/10">
                   <div className="text-sm text-gray-400 mb-1 font-mono uppercase">
                     Phần thưởng
@@ -601,7 +552,6 @@ export default function GameGrid() {
                     +{result.reward.toLocaleString()}
                   </div>
                 </div>
-
                 <button
                   onClick={() => setResult(null)}
                   className="w-full py-4 bg-white text-black font-black uppercase rounded-xl hover:scale-105 transition-transform hover:bg-gray-200"
@@ -614,10 +564,9 @@ export default function GameGrid() {
         )}
       </AnimatePresence>
 
-      {/* --- GAME ARENA --- */}
+      {/* Game Arena */}
       <AnimatePresence mode="wait">
         {!activeGame ? (
-          // LOBBY VIEW
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -660,12 +609,10 @@ export default function GameGrid() {
                 className={`cursor-pointer bg-[#0a0a0a] border-2 ${game.color} rounded-[2.5rem] p-8 relative overflow-hidden group transition-all duration-300 ${game.bg} ${game.shadow} shadow-lg h-[400px] flex flex-col justify-between`}
               >
                 <div className="absolute top-0 right-0 w-40 h-40 bg-white/5 rounded-full blur-[60px] group-hover:bg-white/10 transition-colors"></div>
-
                 <div className="relative z-10 flex flex-col h-full items-center text-center justify-center">
                   <div className="text-8xl mb-8 group-hover:scale-110 transition-transform duration-500 drop-shadow-[0_10px_20px_rgba(0,0,0,0.5)] filter grayscale group-hover:grayscale-0">
                     {game.icon}
                   </div>
-
                   <div>
                     <h3 className="text-3xl font-black text-white mb-3 uppercase tracking-wide">
                       {game.title}
@@ -674,7 +621,6 @@ export default function GameGrid() {
                       {game.desc}
                     </p>
                   </div>
-
                   <div className="absolute bottom-8 opacity-0 group-hover:opacity-100 transition-all duration-500 translate-y-4 group-hover:translate-y-0">
                     <span className="text-xs font-bold uppercase tracking-[0.2em] text-white border-b-2 border-white pb-1">
                       Chơi Ngay
@@ -685,7 +631,6 @@ export default function GameGrid() {
             ))}
           </motion.div>
         ) : (
-          // ACTIVE GAME VIEW
           <motion.div
             key="active-game"
             initial={{ scale: 0.95, opacity: 0 }}
@@ -693,14 +638,10 @@ export default function GameGrid() {
             exit={{ scale: 0.95, opacity: 0 }}
             className="relative w-full max-w-5xl mx-auto"
           >
-            {/* 👇 SỬ DỤNG NÚT QUAY LẠI MỚI 👇 */}
             <BackToLobbyBtn onClick={() => setActiveGame(null)} />
-
             <div className="bg-[#050505]/90 backdrop-blur-3xl border border-white/10 rounded-[3rem] p-12 min-h-[600px] shadow-[0_0_50px_rgba(0,0,0,0.5)] relative overflow-hidden">
-              {/* Background Game */}
               <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-white/5 via-transparent to-transparent pointer-events-none"></div>
               <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-5 pointer-events-none"></div>
-
               {activeGame === "wheel" && (
                 <LuckyWheel
                   onPlay={() => playGame("wheel")}
