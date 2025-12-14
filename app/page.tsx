@@ -158,7 +158,7 @@ export default async function HomePage() {
         </div>
 
         {/* Right Side - 3D Model (Giữ nguyên) */}
-        <div className="hidden lg:flex w-1/2 xl:w-[45%] h-full items-center justify-center relative overflow-hidden pointer-events-none">
+        <div className="hidden lg:flex w-1/2 xl:w-[45%] h-full items-center justify-center relative overflow-hidden">
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-primary/5 rounded-full blur-3xl animate-pulse"></div>
           <div className="relative w-[90%] h-[80%] max-w-[600px] max-h-[600px] flex items-center justify-center">
             <SplineModel />

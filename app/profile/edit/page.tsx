@@ -171,7 +171,9 @@ export default function EditProfilePage() {
         <div className="flex items-center justify-between mb-8 animate-fade-in">
           <div>
             <h1 className="text-2xl font-bold font-mono text-foreground">
-              <span className="text-primary animate-glow-pulse">Chỉnh sửa</span>{" "}
+              <span className="inline-block px-3 py-1 mr-3 bg-primary/8 text-primary rounded-md font-semibold">
+                Chỉnh sửa
+              </span>
               Profile
             </h1>
             <p className="text-sm font-mono text-foreground/60 mt-1">

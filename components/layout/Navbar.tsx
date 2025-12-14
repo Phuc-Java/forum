@@ -28,7 +28,9 @@ export default function Navbar() {
   const [loading, setLoading] = useState(true);
   const [showDropdown, setShowDropdown] = useState(false);
   const [eventsOpen, setEventsOpen] = useState(false);
+  const [perksOpen, setPerksOpen] = useState(false);
   const eventsTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const perksTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Check auth on mount and route change
   useEffect(() => {
@@ -116,6 +118,7 @@ export default function Navbar() {
   useEffect(() => {
     return () => {
       if (eventsTimer.current) clearTimeout(eventsTimer.current as any);
+      if (perksTimer.current) clearTimeout(perksTimer.current as any);
     };
   }, []);
 
@@ -135,6 +138,22 @@ export default function Navbar() {
     }, delay);
   };
 
+  const openPerks = () => {
+    if (perksTimer.current) {
+      clearTimeout(perksTimer.current as any);
+      perksTimer.current = null;
+    }
+    setPerksOpen(true);
+  };
+
+  const closePerksWithDelay = (delay = 300) => {
+    if (perksTimer.current) clearTimeout(perksTimer.current as any);
+    perksTimer.current = setTimeout(() => {
+      setPerksOpen(false);
+      perksTimer.current = null;
+    }, delay);
+  };
+
   const handleLogout = async () => {
     await logout();
     setUser(null);
@@ -151,7 +170,7 @@ export default function Navbar() {
   };
 
   return (
-    <nav className="sticky top-0 z-50 bg-surface/80 backdrop-blur-lg border-b-2 border-border shadow-lg animate-fade-in">
+    <nav className="sticky top-0 z-9999 bg-surface/80 backdrop-blur-lg border-b-2 border-border shadow-lg animate-fade-in">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
@@ -202,7 +221,7 @@ export default function Navbar() {
               }`}
             >
               <span className="relative">
-                Trang Chủ
+                Tiên Phủ
                 {pathname === "/" && (
                   <span className="absolute -bottom-1 left-0 right-0 h-0.5 bg-primary animate-fade-in rounded-full"></span>
                 )}
@@ -217,7 +236,7 @@ export default function Navbar() {
               }`}
             >
               <span className="relative">
-                Thành Viên
+                Chúng Tu
                 {pathname === "/members" && (
                   <span className="absolute -bottom-1 left-0 right-0 h-0.5 bg-secondary animate-fade-in rounded-full"></span>
                 )}
@@ -232,12 +251,77 @@ export default function Navbar() {
               }`}
             >
               <span className="relative">
-                Tài Nguyên
+                Bảo Khố
                 {pathname?.startsWith("/resources") && (
                   <span className="absolute -bottom-1 left-0 right-0 h-0.5 bg-accent animate-fade-in rounded-full"></span>
                 )}
               </span>
             </Link>
+            {/* Đặc quyền - moved next to Resources */}
+            <div
+              className="relative"
+              onMouseEnter={openPerks}
+              onMouseLeave={() => closePerksWithDelay(300)}
+            >
+              <button
+                onFocus={openPerks}
+                onBlur={() => closePerksWithDelay(300)}
+                className={`font-mono text-sm transition-all duration-300 relative hover:scale-105 ${
+                  pathname?.startsWith("/shop") || pathname === "/chat"
+                    ? "text-primary"
+                    : "text-foreground/70 hover:text-primary"
+                }`}
+                aria-haspopup="true"
+                aria-expanded={perksOpen}
+              >
+                <span className="relative inline-flex items-center gap-2">
+                  <span className="text-lg">🎖️</span>
+                  <span>Phúc Lợi</span>
+                  {(pathname?.startsWith("/shop") || pathname === "/chat") && (
+                    <span className="absolute -bottom-1 left-0 right-0 h-0.5 bg-primary animate-fade-in rounded-full"></span>
+                  )}
+                </span>
+              </button>
+
+              <div
+                className={`absolute left-0 top-full mt-2 w-44 bg-surface border border-border rounded-lg shadow-2xl overflow-hidden z-50 transform transition-all duration-250 ${
+                  perksOpen
+                    ? "opacity-100 translate-y-0 visible"
+                    : "opacity-0 -translate-y-2 invisible"
+                }`}
+                onMouseEnter={openPerks}
+                onMouseLeave={() => closePerksWithDelay(300)}
+              >
+                <Link
+                  href="/shop"
+                  className={`flex items-center px-5 py-3 font-mono text-sm text-foreground/80 hover:bg-primary/10 hover:text-primary transition-all duration-150 ${
+                    pathname === "/shop" ? "text-primary" : ""
+                  }`}
+                >
+                  <span className="mr-3 text-lg" aria-hidden="true">
+                    🛒
+                  </span>
+                  <span>Tàng Kinh Các</span>
+                  <span className="ml-auto text-gray-400 transition-colors group-hover:text-primary">
+                    →
+                  </span>
+                </Link>
+                <Link
+                  href="/chat"
+                  className={`flex items-center px-5 py-3 font-mono text-sm text-foreground/80 hover:bg-primary/10 hover:text-primary transition-all duration-150 ${
+                    pathname === "/chat" ? "text-primary" : ""
+                  }`}
+                >
+                  <span className="mr-3 text-lg" aria-hidden="true">
+                    🤖
+                  </span>
+                  <span>Đấng Toàn Năng</span>
+                  <span className="ml-auto text-gray-400 transition-colors group-hover:text-primary">
+                    →
+                  </span>
+                </Link>
+              </div>
+            </div>
             <Link
               href="/forum"
               className={`font-mono text-sm transition-all duration-300 relative hover:scale-105 ${
@@ -247,42 +331,13 @@ export default function Navbar() {
               }`}
             >
               <span className="relative">
-                Góp Ý
+                Cáo Tri
                 {pathname === "/forum" && (
                   <span className="absolute -bottom-1 left-0 right-0 h-0.5 bg-primary animate-fade-in rounded-full"></span>
                 )}
               </span>
             </Link>
-            <Link
-              href="/shop"
-              className={`font-mono text-sm transition-all duration-300 relative hover:scale-105 ${
-                pathname === "/shop"
-                  ? "text-primary"
-                  : "text-foreground/70 hover:text-primary"
-              }`}
-            >
-              <span className="relative">
-                Tàng kinh Các
-                {pathname === "/shop" && (
-                  <span className="absolute -bottom-1 left-0 right-0 h-0.5 bg-primary animate-fade-in rounded-full"></span>
-                )}
-              </span>
-            </Link>
-            <Link
-              href="/chat"
-              className={`font-mono text-sm transition-all duration-300 relative hover:scale-105 ${
-                pathname === "/chat"
-                  ? "text-accent"
-                  : "text-foreground/70 hover:text-accent"
-              }`}
-            >
-              <span className="relative">
-                AI
-                {pathname === "/chat" && (
-                  <span className="absolute -bottom-1 left-0 right-0 h-0.5 bg-accent animate-fade-in rounded-full"></span>
-                )}
-              </span>
-            </Link>
+
             <div
               className="relative"
               onMouseEnter={openEvents}
@@ -300,7 +355,7 @@ export default function Navbar() {
                 aria-expanded={eventsOpen}
               >
                 <span className="relative inline-flex items-center">
-                  Sự Kiện
+                  Bí Cảnh
                   <span
                     className="ml-2 w-2 h-2 rounded-full bg-primary animate-glow-pulse inline-block"
                     aria-hidden="true"
@@ -330,7 +385,10 @@ export default function Navbar() {
                     className="mr-3 w-2 h-2 rounded-full bg-primary animate-glow-pulse inline-block"
                     aria-hidden="true"
                   ></span>
-                  <span>Giáng sinh</span>
+                  <span>Đông Chí Hội</span>
+                  <span className="ml-auto text-gray-400 transition-colors group-hover:text-primary">
+                    →
+                  </span>
                 </Link>
                 <Link
                   href="/events/my-crush"
@@ -343,6 +401,9 @@ export default function Navbar() {
                     aria-hidden="true"
                   ></span>
                   <span>My Crush</span>
+                  <span className="ml-auto text-gray-400 transition-colors group-hover:text-primary">
+                    →
+                  </span>
                 </Link>
                 <Link
                   href="/earn"
@@ -355,6 +416,9 @@ export default function Navbar() {
                     aria-hidden="true"
                   ></span>
                   <span>Thiên Cơ Lâu</span>
+                  <span className="ml-auto text-gray-400 transition-colors group-hover:text-primary">
+                    →
+                  </span>
                 </Link>
                 <Link
                   href="/gallery"
@@ -367,24 +431,27 @@ export default function Navbar() {
                     aria-hidden="true"
                   ></span>
                   <span>Mỹ Nhân</span>
+                  <span className="ml-auto text-gray-400 transition-colors group-hover:text-primary">
+                    →
+                  </span>
+                </Link>
+                <Link
+                  href="/phim"
+                  className={`flex items-center px-5 py-3 font-mono text-sm text-foreground/80 hover:bg-primary/10 hover:text-primary transition-all duration-150 ${
+                    pathname === "/phim" ? "text-primary" : ""
+                  }`}
+                >
+                  <span
+                    className="mr-3 w-2 h-2 rounded-full bg-primary animate-glow-pulse inline-block"
+                    aria-hidden="true"
+                  ></span>
+                  <span>Vạn Tượng Đài</span>
+                  <span className="ml-auto text-gray-400 transition-colors group-hover:text-primary">
+                    →
+                  </span>
                 </Link>
               </div>
             </div>
-            <Link
-              href="/phim"
-              className={`font-mono text-sm transition-all duration-300 relative hover:scale-105 ${
-                pathname === "/phim"
-                  ? "text-primary"
-                  : "text-foreground/70 hover:text-primary"
-              }`}
-            >
-              <span className="relative">
-                Phim
-                {pathname === "/phim" && (
-                  <span className="absolute -bottom-1 left-0 right-0 h-0.5 bg-primary animate-fade-in rounded-full"></span>
-                )}
-              </span>
-            </Link>
           </div>
 
           {/* Auth Section */}
