@@ -254,16 +254,16 @@ export default function Navbar() {
               </span>
             </Link>
             <Link
-              href="/test"
+              href="/shop"
               className={`font-mono text-sm transition-all duration-300 relative hover:scale-105 ${
-                pathname === "/test"
+                pathname === "/shop"
                   ? "text-primary"
                   : "text-foreground/70 hover:text-primary"
               }`}
             >
               <span className="relative">
-                Test
-                {pathname === "/test" && (
+                Shop
+                {pathname === "/shop" && (
                   <span className="absolute -bottom-1 left-0 right-0 h-0.5 bg-primary animate-fade-in rounded-full"></span>
                 )}
               </span>
@@ -343,6 +343,30 @@ export default function Navbar() {
                     aria-hidden="true"
                   ></span>
                   <span>My Crush</span>
+                </Link>
+                <Link
+                  href="/earn"
+                  className={`flex items-center px-5 py-3 font-mono text-sm text-foreground/80 hover:bg-primary/10 hover:text-primary transition-all duration-150 ${
+                    pathname === "/earn" ? "text-primary" : ""
+                  }`}
+                >
+                  <span
+                    className="mr-3 w-2 h-2 rounded-full bg-primary animate-glow-pulse inline-block"
+                    aria-hidden="true"
+                  ></span>
+                  <span>Kiếm Tiền</span>
+                </Link>
+                <Link
+                  href="/gallery"
+                  className={`flex items-center px-5 py-3 font-mono text-sm text-foreground/80 hover:bg-primary/10 hover:text-primary transition-all duration-150 ${
+                    pathname === "/gallery" ? "text-primary" : ""
+                  }`}
+                >
+                  <span
+                    className="mr-3 w-2 h-2 rounded-full bg-primary animate-glow-pulse inline-block"
+                    aria-hidden="true"
+                  ></span>
+                  <span>Gallery</span>
                 </Link>
               </div>
             </div>

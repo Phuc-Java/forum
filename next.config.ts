@@ -29,7 +29,16 @@ const nextConfig: NextConfig = {
   images: {
     formats: ["image/avif", "image/webp"],
     // Allow Appwrite storage host for thumbnails and files
-    domains: ["sgp.cloud.appwrite.io"],
+    domains: ["sgp.cloud.appwrite.io", "images.unsplash.com"],
+    // Allow external placeholder images used in dev/error screenshots
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "placehold.co",
+        port: "",
+        pathname: "/**",
+      },
+    ],
     minimumCacheTTL: 60 * 60 * 24, // 24 hours
   },
 

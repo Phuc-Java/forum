@@ -1,5 +1,76 @@
 @import "tailwindcss";
+@layer utilities {
+  /* Ẩn scrollbar nhưng vẫn cuộn được */
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
 
+  /* Hiệu ứng Glitch Text khi hover */
+  .glitch-hover:hover {
+    animation: glitch 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94) both infinite;
+    color: #34d399; /* Emerald-400 */
+  }
+
+  /* Hiệu ứng chạy viền (Shimmer Border) */
+  .animate-border-run {
+    background: linear-gradient(
+      90deg,
+      transparent,
+      rgba(52, 211, 153, 0.5),
+      transparent
+    );
+    background-size: 200% 100%;
+    animation: borderRun 2s linear infinite;
+  }
+}
+
+@keyframes glitch {
+  0% {
+    transform: translate(0);
+  }
+  20% {
+    transform: translate(-2px, 2px);
+  }
+  40% {
+    transform: translate(-2px, -2px);
+  }
+  60% {
+    transform: translate(2px, 2px);
+  }
+  80% {
+    transform: translate(2px, -2px);
+  }
+  100% {
+    transform: translate(0);
+  }
+}
+
+@keyframes borderRun {
+  0% {
+    background-position: 100% 0;
+  }
+  100% {
+    background-position: -100% 0;
+  }
+}
+
+@keyframes float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+.animate-float {
+  animation: float 6s ease-in-out infinite;
+}
 /* Cyberpunk/Hacker Theme - Dark with Neon Accents */
 :root {
   /* Dark canvas */
