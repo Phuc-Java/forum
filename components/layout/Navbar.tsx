@@ -320,6 +320,20 @@ export default function Navbar() {
                     →
                   </span>
                 </Link>
+                <Link
+                  href="/3Dtest"
+                  className={`flex items-center px-5 py-3 font-mono text-sm text-foreground/80 hover:bg-primary/10 hover:text-primary transition-all duration-150 ${
+                    pathname?.startsWith("/3Dtest") ? "text-primary" : ""
+                  }`}
+                >
+                  <span className="mr-3 text-lg" aria-hidden="true">
+                    🏺
+                  </span>
+                  <span>Trân Tàng</span>
+                  <span className="ml-auto text-gray-400 transition-colors group-hover:text-primary">
+                    →
+                  </span>
+                </Link>
               </div>
             </div>
             <Link

@@ -1,18 +1,21 @@
 "use client";
 import React, { useEffect, useState, useRef, useCallback } from "react";
-// Import UI
+
+// --- IMPORT UI COMPONENTS ---
 import {
   ChatSidebar,
   ChatHeader,
   Toast,
   Icons,
-  AccessDeniedOverlay,
+  // AccessDeniedOverlay, // Đã bỏ overlay cũ
 } from "../../components/ui/ChatParts";
 
+// --- IMPORT OVERLAY MỚI (THẦN THỨC BỊ CHẶN) ---
+import { ChatAccessDenied } from "./ChatAccessDenied";
+
 // --- APPWRITE CLIENT SDK IMPORTS ---
-// Sử dụng SDK Client (appwrite) thay vì Server (node-appwrite)
 import { Client, Account, Databases, Query } from "appwrite";
-import { APPWRITE_CONFIG } from "@/lib/appwrite/config"; // Đảm bảo đường dẫn này đúng
+import { APPWRITE_CONFIG } from "@/lib/appwrite/config";
 
 // --- CẤU HÌNH ROLE ĐƯỢC PHÉP ---
 const ALLOWED_ROLES = ["chi_cuong_gia", "thanh_nhan", "chi_ton"];
@@ -63,7 +66,6 @@ export default function ChatPage() {
         }
 
         // 3. Query vào bảng Profiles để lấy Role
-        // (Tìm document trong collection profiles có userId trùng với user.$id)
         const profileRes = await databases.listDocuments(
           APPWRITE_CONFIG.databaseId,
           APPWRITE_CONFIG.collections.profiles,
@@ -90,12 +92,15 @@ export default function ChatPage() {
         console.error("Lỗi xác thực quyền:", error);
         setHasAccess(false); // Có lỗi => Chặn
       } finally {
-        setIsChecking(false); // Tắt màn hình loading
+        setChecking(false); // Tắt màn hình loading
       }
     };
 
     verifyUserPermission();
   }, []);
+
+  // Fix lỗi setChecking không được định nghĩa ở trên (do sửa code gốc)
+  const setChecking = (val: boolean) => setIsChecking(val);
 
   // --- 2. STATE GIAO DIỆN CHAT ---
   const [messages, setMessages] = useState<
@@ -383,8 +388,8 @@ export default function ChatPage() {
         }
       `}</style>
 
-      {/* --- HIỂN THỊ OVERLAY NẾU KHÔNG CÓ QUYỀN --- */}
-      {!hasAccess && <AccessDeniedOverlay />}
+      {/* --- HIỂN THỊ OVERLAY NẾU KHÔNG CÓ QUYỀN (SỬ DỤNG COMPONENT MỚI) --- */}
+      {!hasAccess && <ChatAccessDenied minRole="Chí Cường Giả" />}
 
       <Toast msg={toast.msg} show={toast.show} />
 

@@ -5,7 +5,8 @@ import {
   getServerProfile,
   type ServerProfile,
 } from "@/lib/appwrite/server";
-import { PostCard, CreatePostForm } from "@/components";
+import CreatePostForm from "@/components/ui/CreatePostForm"; // Ví dụ đường dẫn
+import PostCard from "@/components/ui/PostCard";
 import type { Metadata } from "next";
 
 // SEO Metadata

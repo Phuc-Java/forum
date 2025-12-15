@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import localFont from "next/font/local";
 import "./globals.css";
-import { Navbar } from "@/components";
+import Navbar from "@/components/layout/Navbar";
 import ClientMusicPlayer from "@/components/ui/ClientMusicPlayer";
 
 // Be Vietnam Pro - Sans-serif tiếng Việt cho body text
@@ -74,7 +74,7 @@ const xanhMono = localFont({
 });
 
 export const metadata: Metadata = {
-  title: "Xóm Nhà Lá - Cộng Đồng Cyberpunk",
+  title: "Xóm Nhà Lá",
   description:
     "Diễn đàn ẩn danh phong cách Cyberpunk - Kết nối, chia sẻ, bảo mật",
 };

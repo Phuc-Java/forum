@@ -1,5 +1,10 @@
 import Link from "next/link";
-import { AuthForm, FunFactBox } from "@/components";
+// ❌ XÓA DÒNG NÀY:
+// import { AuthForm, FunFactBox } from "@/components";
+
+// ✅ THAY BẰNG (Ví dụ, bạn cần trỏ đúng đường dẫn thực tế của file component):
+import AuthForm from "@/components/auth/AuthForm"; // Hoặc đường dẫn nơi bạn để AuthForm
+import FunFactBox from "@/components/ui/FunFactBox"; // Hoặc đường dẫn nơi bạn để FunFactBox
 
 // Pick a server-side random index for the fact (0..9). This keeps selection
 // deterministic per-request and avoids impure calls inside a component render.

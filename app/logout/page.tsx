@@ -4,7 +4,12 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { logout, getCurrentUser } from "@/lib/appwrite/client";
 import Link from "next/link";
-import { FunFactBox } from "@/components";
+import dynamic from "next/dynamic";
+
+const FunFactBox = dynamic(
+  () => import("@/components").then((mod) => mod.FunFactBox),
+  { ssr: false }
+);
 
 export default function LogoutPage() {
   const router = useRouter();
