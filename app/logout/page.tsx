@@ -4,12 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { logout, getCurrentUser } from "@/lib/appwrite/client";
 import Link from "next/link";
-import dynamic from "next/dynamic";
-
-const FunFactBox = dynamic(
-  () => import("@/components").then((mod) => mod.FunFactBox),
-  { ssr: false }
-);
+import FunFactBoxStatic from "@/components/ui/FunFactBox.static";
 
 export default function LogoutPage() {
   const router = useRouter();
@@ -103,7 +98,7 @@ export default function LogoutPage() {
         </div>
 
         <div className="w-full md:w-80 lg:w-96 self-start">
-          <FunFactBox />
+          <FunFactBoxStatic />
         </div>
       </div>
     </div>

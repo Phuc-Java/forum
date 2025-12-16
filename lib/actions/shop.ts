@@ -2,6 +2,7 @@
 
 import { Client, Databases, ID, Query, Storage } from "node-appwrite";
 import { APPWRITE_CONFIG } from "../appwrite/config";
+import { getServerUser } from "../appwrite/server";
 import { ROLE_LEVELS, RoleType } from "../roles";
 
 // Shared product type used by UI components
@@ -332,6 +333,29 @@ export async function getCartItems(userId: string) {
   } catch (error: any) {
     console.error("Get Cart Error:", error);
     return { success: false, items: [] };
+  }
+}
+
+// 2b. LẤY TỔNG KHOẢN & GIỎ HÀNG DÙNG TRÊN SERVER (GIÚP GIẢM TẢI CLIENT)
+export async function getCartSummary() {
+  try {
+    const serverUser = await getServerUser();
+    if (!serverUser) return { success: false, error: "NOT_LOGGED_IN" };
+
+    const [cartRes, balanceRes] = await Promise.all([
+      getCartItems(serverUser.$id),
+      getUserBalance(serverUser.$id),
+    ]);
+
+    return {
+      success: true,
+      userId: serverUser.$id,
+      items: cartRes.success ? cartRes.items : [],
+      balance: balanceRes.success ? balanceRes.balance : 0,
+    };
+  } catch (error: any) {
+    console.error("getCartSummary error:", error);
+    return { success: false, error: error?.message || "UNKNOWN" };
   }
 }
 

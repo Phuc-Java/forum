@@ -1,15 +1,35 @@
 "use client";
 
 import React from "react";
+import dynamic from "next/dynamic";
 import HtmlCodeTabs from "@/components/ui/html-code-tabs"; // Đảm bảo đường dẫn đúng đến file bạn đã có
-import { ImageSwiper } from "@/components/demo/ImageSwiper";
-import Lanyard from "@/components/ui/Lanyard";
 import { DemoItemConfig } from "../data/demo-data";
-import ProfilePage from "../portfoliooooo";
-import DecayCard from "@/components/DecayCard";
-import LazyModelDemo from "./LazyModelDemo";
-import SplineCalculator from "./SplineCalculator";
-import NotFoundPage from "./NotFoundPage";
+import Lanyard from "@/components/ui/Lanyard";
+// Dynamic imports for heavy demo components to avoid shipping them until needed
+const ImageSwiper = dynamic(
+  () => import("@/components/demo/ImageSwiper").then((m) => m.ImageSwiper),
+  { ssr: false, loading: () => <div className="w-full h-48" /> }
+);
+const ProfilePage = dynamic(() => import("../portfoliooooo"), {
+  ssr: false,
+  loading: () => <div className="w-full h-48" />,
+});
+const DecayCard = dynamic(() => import("@/components/DecayCard"), {
+  ssr: false,
+  loading: () => <div className="w-full h-48" />,
+});
+const LazyModelDemo = dynamic(() => import("./LazyModelDemo"), {
+  ssr: false,
+  loading: () => <div className="w-full h-48" />,
+});
+const SplineCalculator = dynamic(() => import("./SplineCalculator"), {
+  ssr: false,
+  loading: () => <div className="w-full h-48" />,
+});
+const NotFoundPage = dynamic(() => import("./NotFoundPage"), {
+  ssr: false,
+  loading: () => <div className="w-full h-48" />,
+});
 // --- REGISTER COMPONENTS HERE ---
 // Nơi bạn khai báo component React tương ứng với key
 const DEMO_CARDS_DATA = [

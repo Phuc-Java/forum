@@ -38,6 +38,20 @@ const nextConfig: NextConfig = {
         port: "",
         pathname: "/**",
       },
+      // Allow images hosted on ggayane.github.io (used by some sample covers)
+      {
+        protocol: "https",
+        hostname: "ggayane.github.io",
+        port: "",
+        pathname: "/**",
+      },
+      // Allow Flaticon CDN for icon assets used in the phim page
+      {
+        protocol: "https",
+        hostname: "cdn-icons-png.flaticon.com",
+        port: "",
+        pathname: "/**",
+      },
     ],
     minimumCacheTTL: 60 * 60 * 24, // 24 hours
   },

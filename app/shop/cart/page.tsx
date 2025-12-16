@@ -1,13 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Client, Account } from "appwrite";
-import { APPWRITE_CONFIG } from "@/lib/appwrite/config";
 import {
-  getCartItems,
   removeFromCart,
-  getUserBalance,
   processCheckout,
+  getCartSummary,
 } from "@/lib/actions/shop";
 import Image from "next/image";
 import Link from "next/link";
@@ -41,30 +38,22 @@ export default function CartPage() {
 
   useEffect(() => {
     const initData = async () => {
-      const client = new Client()
-        .setEndpoint(APPWRITE_CONFIG.endpoint)
-        .setProject(APPWRITE_CONFIG.projectId);
-      const account = new Account(client);
-
       try {
-        const user = await account.get();
-        setCurrentUserId(user.$id);
-
-        const [cartRes, balanceRes] = await Promise.all([
-          getCartItems(user.$id),
-          getUserBalance(user.$id),
-        ]);
-
-        if (cartRes.success)
+        const summary = await getCartSummary();
+        if (summary.success) {
+          setCurrentUserId(summary.userId ?? null);
           setItems(
-            cartRes.items.map((it: any) => ({
+            (summary.items || []).map((it: any) => ({
               ...(it as any),
               quantity: (it as any).quantity ?? 1,
             }))
           );
-        if (balanceRes.success) setBalance(balanceRes.balance);
-      } catch (error) {
-        console.error("Chưa đăng nhập");
+          setBalance(summary.balance ?? 0);
+        } else {
+          console.warn("getCartSummary:", summary.error);
+        }
+      } catch (err) {
+        console.error(err);
       } finally {
         setLoading(false);
       }
