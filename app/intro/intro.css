@@ -1,0 +1,355 @@
+@import "tailwindcss";
+
+/* ==========================================================================
+   1. KHỞI TẠO LINH KHÍ (ROOT VARIABLES)
+   ========================================================================== */
+:root {
+  /* Bảng màu Hắc Ám - Vàng Kim */
+  --void-bg: #030303; /* Đen thẳm */
+  --void-dark: #0a0a0a; /* Đen nhạt */
+
+  --gold-light: #fef08a; /* Vàng sáng */
+  --gold-main: #eab308; /* Vàng kim chủ đạo */
+  --gold-dark: #854d0e; /* Vàng đồng tối */
+  --gold-glow: rgba(234, 179, 8, 0.6);
+
+  --paper-bg: #e5e5e5; /* Màu giấy bùa cũ */
+  --paper-texture: #d4d4d4; /* Vân giấy */
+
+  --ink-red: #dc2626; /* Mực chu sa (Triện đỏ) */
+  --ink-black: #171717; /* Mực nho (Chữ đen) */
+
+  /* Font Chữ (Cần import trong layout hoặc page) */
+  /* Use the layout-provided local fonts for harmony:
+      --font-serif is set by app/layout.tsx to Playfair Display
+      --font-sans is set to Be Vietnam Pro
+    */
+  --font-title: var(--font-serif); /* Playfair Display for headings */
+  --font-talisman: var(--font-serif); /* Use Playfair as talisman fallback */
+}
+
+/* ==========================================================================
+   2. NỀN TẢNG KHÔNG GIAN (ATMOSPHERE)
+   ========================================================================== */
+
+/* Lớp nền nhiễu hạt (Noise) tạo cảm giác cổ kính, rùng rợn */
+.bg-void-noise {
+  background-color: var(--void-bg);
+  position: relative;
+  overflow: hidden;
+}
+
+.bg-void-noise::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  opacity: 0.07;
+  pointer-events: none;
+  /* SVG Noise tạo hạt bụi li ti */
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+}
+
+/* Hiệu ứng sương khói trôi nổi */
+.fog-layer {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    circle at 50% 50%,
+    rgba(255, 255, 255, 0.03) 0%,
+    transparent 60%
+  );
+  filter: blur(60px);
+  animation: breathe 10s ease-in-out infinite;
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* ==========================================================================
+   3. TYPOGRAPHY ĐẠI LÃO (TEXT EFFECTS)
+   ========================================================================== */
+
+/* Chữ Vàng Kim đúc từ vàng ròng (Gold Gradient Text) */
+.text-gold-master {
+  font-family: var(--font-title);
+  background: linear-gradient(
+    180deg,
+    #ffffff 0%,
+    var(--gold-light) 20%,
+    var(--gold-main) 50%,
+    var(--gold-dark) 100%
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  text-shadow: 0 0 30px rgba(234, 179, 8, 0.3);
+  letter-spacing: 0.1em;
+}
+
+/* Chữ Khắc Chìm trên bùa */
+.text-ink-engraved {
+  color: var(--text-black);
+  text-shadow: 1px 1px 0px rgba(255, 255, 255, 0.3),
+    -1px -1px 0px rgba(0, 0, 0, 0.1);
+  font-family: var(--font-talisman);
+  font-weight: 900;
+}
+
+/* Chữ cấm địa (Stroke Text) */
+.text-forbidden-stroke {
+  font-family: var(--font-title);
+  color: transparent;
+  -webkit-text-stroke: 1px rgba(255, 255, 255, 0.2);
+  position: relative;
+}
+.text-forbidden-stroke::after {
+  content: attr(data-text);
+  position: absolute;
+  left: 0;
+  top: 0;
+  color: var(--gold-main);
+  opacity: 0;
+  transition: opacity 0.5s;
+  text-shadow: 0 0 20px var(--gold-main);
+}
+.group:hover .text-forbidden-stroke::after {
+  opacity: 1;
+}
+
+/* ==========================================================================
+   4. BÙA CHÚ & NIÊM PHONG (TALISMAN COMPONENTS)
+   ========================================================================== */
+
+/* Lá bùa giấy (Cắt răng cưa bằng CSS Clip-path) */
+.talisman-strip {
+  background-color: var(--paper-bg);
+  box-shadow: 0 10px 50px rgba(0, 0, 0, 0.8);
+  position: relative;
+  /* Tạo hình răng cưa ở 2 đầu */
+  --notch-size: 15px;
+  clip-path: polygon(
+    0% var(--notch-size),
+    10% 0%,
+    20% var(--notch-size),
+    30% 0%,
+    40% var(--notch-size),
+    50% 0%,
+    60% var(--notch-size),
+    70% 0%,
+    80% var(--notch-size),
+    90% 0%,
+    100% var(--notch-size),
+    100% 100%,
+    90% calc(100% - var(--notch-size)),
+    80% 100%,
+    70% calc(100% - var(--notch-size)),
+    60% 100%,
+    50% calc(100% - var(--notch-size)),
+    40% 100%,
+    30% calc(100% - var(--notch-size)),
+    20% 100%,
+    10% calc(100% - var(--notch-size)),
+    0% 100%
+  );
+  overflow: hidden;
+  transition: transform 0.5s cubic-bezier(0.25, 1, 0.5, 1);
+}
+
+/* Họa tiết giấy cũ (Texture overlay) */
+.talisman-strip::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: url("https://www.transparenttextures.com/patterns/aged-paper.png"); /* Fallback texture */
+  opacity: 0.5;
+  mix-blend-mode: multiply;
+  pointer-events: none;
+}
+
+/* Ấn Triện Đỏ (Seal Stamp) */
+.seal-red {
+  border: 3px solid var(--ink-red);
+  color: var(--ink-red);
+  font-family: var(--font-talisman);
+  font-weight: bold;
+  display: grid;
+  place-items: center;
+  border-radius: 4px;
+  mix-blend-mode: multiply; /* Hòa trộn vào giấy */
+  opacity: 0.85;
+  transform: rotate(-15deg);
+  box-shadow: inset 0 0 0 2px var(--ink-red);
+  backdrop-filter: blur(1px);
+}
+
+/* ==========================================================================
+   5. CỬU CHUYỂN ANIMATION (KEYFRAMES)
+   ========================================================================== */
+
+/* 1. Hiệu ứng bùa cháy thành tro (Dùng Mask) */
+@keyframes burn-to-ash {
+  0% {
+    mask-image: linear-gradient(to bottom, black 100%, transparent 100%);
+    -webkit-mask-image: linear-gradient(
+      to bottom,
+      black 100%,
+      transparent 100%
+    );
+    filter: brightness(1);
+  }
+  50% {
+    filter: brightness(2) drop-shadow(0 0 20px orange); /* Cháy sáng lên */
+  }
+  100% {
+    mask-image: linear-gradient(to bottom, black -20%, transparent -20%);
+    -webkit-mask-image: linear-gradient(
+      to bottom,
+      black -20%,
+      transparent -20%
+    );
+    opacity: 0;
+  }
+}
+
+.animate-burn-away {
+  animation: burn-to-ash 2s ease-in-out forwards;
+}
+
+/* 2. Hiệu ứng xích rung lắc (Khi hover vào ổ khóa) */
+@keyframes rattle-chains {
+  0%,
+  100% {
+    transform: translateY(0) rotate(0deg);
+  }
+  25% {
+    transform: translateY(2px) rotate(1deg);
+  }
+  50% {
+    transform: translateY(-1px) rotate(-1deg);
+  }
+  75% {
+    transform: translateY(1px) rotate(0.5deg);
+  }
+}
+
+.hover-rattle:hover .chain-link {
+  animation: rattle-chains 0.2s linear infinite;
+}
+
+/* 3. Hiệu ứng Ổ khóa rơi xuống khi mở */
+@keyframes unlock-fall {
+  0% {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+  }
+  20% {
+    transform: translateY(-10px) scale(1.1);
+  } /* Nhảy lên chút */
+  100% {
+    transform: translateY(200px) scale(0.5);
+    opacity: 0;
+  } /* Rơi xuống vực */
+}
+
+.animate-unlock {
+  animation: unlock-fall 0.8s ease-in forwards;
+}
+
+/* 4. Hiệu ứng thở (Cho sương mù và ánh sáng) */
+@keyframes breathe {
+  0%,
+  100% {
+    opacity: 0.3;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.6;
+    transform: scale(1.05);
+  }
+}
+
+/* 5. Hiệu ứng mực loang (Ink Reveal) */
+@keyframes ink-spread-dark {
+  0% {
+    mask-size: 0% 0%;
+    opacity: 0;
+  }
+  100% {
+    mask-size: 300% 300%;
+    opacity: 1;
+  }
+}
+
+/* ==========================================================================
+   6. UI COMPONENTS (Card, Button)
+   ========================================================================== */
+
+/* Thẻ Cấm Địa (Forbidden Card) */
+.card-forbidden {
+  background: linear-gradient(160deg, #111 0%, #050505 100%);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  position: relative;
+  transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow: hidden;
+}
+
+.card-forbidden::before {
+  /* Viền vàng chạy xung quanh khi hover */
+  content: "";
+  position: absolute;
+  inset: 0;
+  padding: 1px; /* độ dày border */
+  background: linear-gradient(
+    45deg,
+    transparent,
+    var(--gold-main),
+    transparent
+  );
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  opacity: 0;
+  transition: opacity 0.5s ease;
+}
+
+.card-forbidden:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 20px 60px -10px rgba(0, 0, 0, 0.8);
+  border-color: rgba(234, 179, 8, 0.3);
+}
+
+.card-forbidden:hover::before {
+  opacity: 1;
+}
+
+/* Nút Bấm Đại Đạo (Button) */
+.btn-gold {
+  position: relative;
+  background: transparent;
+  color: var(--gold-main);
+  border: 1px solid var(--gold-dark);
+  padding: 12px 32px;
+  font-family: var(--font-title);
+  text-transform: uppercase;
+  letter-spacing: 0.2em;
+  transition: all 0.3s;
+  overflow: hidden;
+}
+
+.btn-gold:hover {
+  background: var(--gold-main);
+  color: black;
+  box-shadow: 0 0 30px var(--gold-glow);
+  border-color: var(--gold-main);
+}
+
+/* Đường kẻ ngăn cách (Divider) */
+.divider-vertical {
+  width: 1px;
+  background: linear-gradient(
+    to bottom,
+    transparent,
+    var(--gold-dark),
+    transparent
+  );
+}

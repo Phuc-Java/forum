@@ -82,6 +82,9 @@
 /* Cyberpunk/Hacker Theme - Dark with Neon Accents */
 :root {
   /* Dark canvas */
+  background-color: var(--color-dao-black);
+  color: var(--color-dao-white);
+  overflow-x: hidden;
   --background: #071116; /* slightly cooler dark */
   --foreground: #e6f6f5;
   /* Primary neon (teal) inspired by Thành Viên */
@@ -147,6 +150,42 @@
     to {
       opacity: 1;
       transform: translateY(0);
+    }
+  }
+  /* Khai báo màu sắc Đạo Gia */
+  --color-dao-black: #0a0a0a;
+  --color-dao-dark: #121212;
+  --color-dao-gray: #262626;
+  --color-dao-white: #f5f5f5;
+  --color-dao-mist: #e5e5e5;
+  --color-dao-gold: #c6a87c; /* Màu vàng kim cổ điển cho Chí Tôn */
+  --color-dao-ink: #000000;
+
+  /* Font chữ */
+  --font-serif: "Cinzel", serif; /* Dùng cho tiêu đề đại lão */
+  --font-sans: "Inter", sans-serif; /* Dùng cho nội dung kỹ thuật */
+
+  /* Animation Keyframes */
+  @keyframes float-mist {
+    0%,
+    100% {
+      transform: translateY(0) scale(1);
+      opacity: 0.3;
+    }
+    50% {
+      transform: translateY(-20px) scale(1.1);
+      opacity: 0.6;
+    }
+  }
+
+  @keyframes ink-spread {
+    0% {
+      transform: scale(0);
+      opacity: 0;
+    }
+    100% {
+      transform: scale(50);
+      opacity: 1;
     }
   }
 }

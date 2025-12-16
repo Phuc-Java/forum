@@ -123,6 +123,13 @@ export default function Navbar() {
   }, []);
 
   const openEvents = () => {
+    // If perks menu is open or waiting to close, cancel that and close it immediately
+    if (perksTimer.current) {
+      clearTimeout(perksTimer.current as any);
+      perksTimer.current = null;
+    }
+    if (perksOpen) setPerksOpen(false);
+
     if (eventsTimer.current) {
       clearTimeout(eventsTimer.current as any);
       eventsTimer.current = null;
@@ -139,6 +146,13 @@ export default function Navbar() {
   };
 
   const openPerks = () => {
+    // If events menu is open or waiting to close, cancel that and close it immediately
+    if (eventsTimer.current) {
+      clearTimeout(eventsTimer.current as any);
+      eventsTimer.current = null;
+    }
+    if (eventsOpen) setEventsOpen(false);
+
     if (perksTimer.current) {
       clearTimeout(perksTimer.current as any);
       perksTimer.current = null;
@@ -223,6 +237,21 @@ export default function Navbar() {
               <span className="relative">
                 Tiên Phủ
                 {pathname === "/" && (
+                  <span className="absolute -bottom-1 left-0 right-0 h-0.5 bg-primary animate-fade-in rounded-full"></span>
+                )}
+              </span>
+            </Link>
+            <Link
+              href="/intro"
+              className={`font-mono text-sm transition-all duration-300 relative hover:scale-105 ${
+                pathname?.startsWith("/intro")
+                  ? "text-primary"
+                  : "text-foreground/70 hover:text-primary"
+              }`}
+            >
+              <span className="relative">
+                Sơ Môn Đồ
+                {pathname?.startsWith("/intro") && (
                   <span className="absolute -bottom-1 left-0 right-0 h-0.5 bg-primary animate-fade-in rounded-full"></span>
                 )}
               </span>
