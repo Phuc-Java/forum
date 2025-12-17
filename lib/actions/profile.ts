@@ -26,6 +26,9 @@ export interface Profile {
   website: string | null;
   socialLinks: string | null; // JSON string
   skills: string | null;
+  // In-game economy fields
+  currency?: string | number; // stored as string in DB but may be read as number
+  isCauldronBroken?: boolean;
   // Role system fields
   role: string | null;
   customTags: string | null;
@@ -118,6 +121,9 @@ export async function createProfile(
         bio: null,
         avatarType: "default",
         avatarUrl: "default.jpg",
+        // Game defaults
+        currency: String(10000),
+        isCauldronBroken: false,
         location: null,
         website: null,
         socialLinks: null,

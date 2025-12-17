@@ -22,7 +22,7 @@ import {
   isAdmin,
   type RoleType,
 } from "@/lib/roles";
-
+import { ShieldBan, LockKeyhole, ChevronLeft, Zap } from "lucide-react";
 export default function AdminPage() {
   const router = useRouter();
   const [currentUser, setCurrentUser] = useState<{
@@ -129,26 +129,7 @@ export default function AdminPage() {
   }
 
   if (unauthorized) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-center max-w-md mx-auto p-8">
-          <div className="text-6xl mb-4">🚫</div>
-          <h1 className="text-2xl font-bold font-mono text-danger mb-2">
-            Không có quyền truy cập
-          </h1>
-          <p className="text-foreground/60 font-mono mb-6">
-            Bạn cần có cấp bậc &quot;Thành Nhân&quot; trở lên để truy cập trang
-            này.
-          </p>
-          <Link
-            href="/forum"
-            className="inline-flex items-center gap-2 px-6 py-3 bg-primary/20 border border-primary/50 rounded-lg text-primary font-mono hover:bg-primary/30 transition-colors"
-          >
-            Quay lại diễn đàn
-          </Link>
-        </div>
-      </div>
-    );
+    return <ForbiddenScreen />;
   }
 
   return (
@@ -448,7 +429,124 @@ function RoleEditModal({
     </>
   );
 }
+function ForbiddenScreen() {
+  const [glitch, setGlitch] = useState(false);
 
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setGlitch(true);
+      setTimeout(() => setGlitch(false), 200);
+    }, 3000);
+    return () => clearInterval(interval);
+  }, []);
+
+  return (
+    <div className="min-h-screen w-full bg-[#050000] overflow-hidden flex flex-col items-center justify-center relative select-none">
+      {/* Lớp 1: Nền Hư Không & Lưới Linh Khí */}
+      <div className="absolute inset-0 z-0 opacity-20 bg-[linear-gradient(rgba(185,28,28,0.1)_1px,transparent_1px),linear-gradient(90deg,rgba(185,28,28,0.1)_1px,transparent_1px)] bg-[size:40px_40px]" />
+      <div className="absolute inset-0 z-0 bg-[radial-gradient(circle_at_center,transparent_0%,#000000_90%)]" />
+
+      {/* Lớp 2: Đại Trận Pháp (Vòng xoay trang trí) */}
+      <div className="absolute z-10 flex items-center justify-center pointer-events-none">
+        {/* Vòng ngoài */}
+        <div className="w-[500px] h-[500px] border-[1px] border-red-700/30 rounded-full flex items-center justify-center animate-[spin_60s_linear_infinite]">
+          <div className="w-[90%] h-[90%] border border-dashed border-red-600/20 rounded-full" />
+        </div>
+        {/* Vòng giữa - Tam giác nghịch chuyển */}
+        <div className="absolute w-[350px] h-[350px] border border-red-500/30 rounded-full animate-[spin_30s_linear_infinite_reverse] opacity-60">
+          <svg className="w-full h-full p-4" viewBox="0 0 100 100">
+            <path
+              d="M50 5 L95 90 L5 90 Z"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="0.5"
+              className="text-red-600"
+            />
+            <path
+              d="M50 95 L95 10 L5 10 Z"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="0.5"
+              className="text-red-600"
+            />
+          </svg>
+        </div>
+        {/* Vòng trong cùng - Phong ấn */}
+        <div className="absolute w-[200px] h-[200px] bg-red-950/40 backdrop-blur-sm rounded-full border border-red-500/50 shadow-[0_0_50px_rgba(220,38,38,0.4)] animate-pulse flex items-center justify-center">
+          <LockKeyhole className="w-20 h-20 text-red-500 drop-shadow-[0_0_15px_rgba(239,68,68,0.8)]" />
+        </div>
+      </div>
+
+      {/* Lớp 3: Nội dung chính */}
+      <div
+        className={`relative z-20 flex flex-col items-center text-center p-8 max-w-lg transition-transform duration-100 ${
+          glitch ? "translate-x-1 translate-y-1" : ""
+        }`}
+      >
+        {/* Badge Cảnh báo */}
+        <div className="flex items-center gap-2 mb-6 px-4 py-1 rounded-full bg-red-950/80 border border-red-700/50 text-red-400 text-xs font-mono tracking-widest uppercase shadow-[0_0_20px_rgba(220,38,38,0.2)]">
+          <ShieldBan className="w-3 h-3 animate-pulse" />
+          <span>Khu Vực Cấm Địa</span>
+          <ShieldBan className="w-3 h-3 animate-pulse" />
+        </div>
+
+        {/* Tiêu đề */}
+        <h1 className="text-5xl font-bold mb-2 text-transparent bg-clip-text bg-gradient-to-b from-red-400 via-red-600 to-red-900 drop-shadow-[0_2px_10px_rgba(220,38,38,0.5)] font-mono tracking-wide uppercase">
+          Vô Quyền Xâm Nhập
+        </h1>
+
+        <div className="w-32 h-1 bg-gradient-to-r from-transparent via-red-600 to-transparent mb-6 opacity-70" />
+
+        {/* Lời dẫn */}
+        <div className="space-y-4 mb-10 text-red-100/70 font-mono text-sm leading-relaxed">
+          <p>
+            Cấm chế nơi này được thiết lập bởi{" "}
+            <span
+              className="text-red-400 font-bold"
+              style={{ textShadow: "0 0 10px rgba(220, 38, 38, 0.7)" }}
+            >
+              Trưởng Lão Hội
+            </span>
+            . Phàm nhân hoặc tu sĩ cảnh giới thấp không thể đi qua.
+          </p>
+          <div className="bg-red-950/30 border-l-2 border-red-600 p-3 mx-4 text-left text-xs">
+            <p className="flex items-center gap-2 text-red-400 font-bold mb-1">
+              <Zap className="w-3 h-3" /> Yêu cầu cảnh giới:
+            </p>
+            <p className="text-gray-400">
+              Cần đạt cấp bậc{" "}
+              <span className="text-yellow-500 font-bold">Thành Nhân</span> để
+              phá giải phong ấn này.
+            </p>
+          </div>
+        </div>
+
+        {/* Nút quay về */}
+        <Link
+          href="/forum"
+          className="group relative inline-flex items-center gap-3 px-8 py-3 bg-transparent overflow-hidden"
+        >
+          {/* Button Borders */}
+          <div className="absolute inset-0 border border-red-600/30 skew-x-[-12deg] group-hover:bg-red-900/20 group-hover:border-red-500 transition-all duration-300" />
+
+          <ChevronLeft className="w-4 h-4 text-red-500 transition-transform group-hover:-translate-x-1 relative z-10" />
+          <span className="relative z-10 text-red-400 font-bold font-mono tracking-wider group-hover:text-red-300 transition-colors uppercase">
+            Quay Về Diễn Đàn
+          </span>
+
+          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-red-500/10 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700 skew-x-[-12deg]" />
+        </Link>
+      </div>
+
+      {/* Footer System Info */}
+      <div className="absolute bottom-4 text-[10px] text-red-900/40 font-mono flex gap-4 uppercase tracking-[0.2em]">
+        <span>System: Protected</span>
+        <span>•</span>
+        <span>ID: 0xDEAD_BEEF</span>
+      </div>
+    </div>
+  );
+}
 // Tags Edit Modal Component
 function TagsEditModal({
   user,

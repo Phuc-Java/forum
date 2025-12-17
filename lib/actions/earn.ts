@@ -253,3 +253,84 @@ export async function openMysteryBox(userId: string) {
     return { error: error.message };
   }
 }
+
+// ------------------------------------------------------------------
+// PHẦN THÊM MỚI (KHÔNG ĐỤNG VÀO CODE CŨ Ở TRÊN)
+// ------------------------------------------------------------------
+
+// GAME 4: LUYỆN ĐAN - CẬP NHẬT TRẠNG THÁI LÒ (NỔ LÒ)
+export const setCauldronStatus = async (userId: string, isBroken: boolean) => {
+  try {
+    const client = getAdminClient(); // Dùng lại hàm helper có sẵn
+    const databases = new Databases(client);
+
+    // Tìm profile bằng userId (An toàn hơn getDocument trực tiếp)
+    const profileRes = await databases.listDocuments(
+      APPWRITE_CONFIG.databaseId,
+      "profiles",
+      [Query.equal("userId", userId)]
+    );
+
+    if (profileRes.documents.length === 0)
+      return { success: false, error: "Profile not found" };
+    const profile = profileRes.documents[0];
+
+    // Cập nhật trạng thái lò
+    await databases.updateDocument(
+      APPWRITE_CONFIG.databaseId,
+      "profiles",
+      profile.$id, // Dùng document ID thật từ kết quả query
+      {
+        isCauldronBroken: isBroken,
+      }
+    );
+
+    revalidatePath("/earn");
+    return { success: true };
+  } catch (error) {
+    console.error("Lỗi cập nhật lò:", error);
+    return { success: false };
+  }
+};
+
+// GAME 4: LUYỆN ĐAN - SỬA LÒ (TRỪ TIỀN)
+export const repairCauldronAction = async (userId: string, cost: number) => {
+  try {
+    const client = getAdminClient();
+    const databases = new Databases(client);
+
+    // 1. Lấy thông tin user
+    const profileRes = await databases.listDocuments(
+      APPWRITE_CONFIG.databaseId,
+      "profiles",
+      [Query.equal("userId", userId)]
+    );
+
+    if (profileRes.documents.length === 0)
+      return { success: false, error: "Profile not found" };
+    const profile = profileRes.documents[0];
+
+    const currentBalance = Number(profile.currency) || 0;
+
+    // 2. Tính toán tiền sau khi trừ (Không cho phép âm)
+    let newBalance = currentBalance - cost;
+    if (newBalance < 0) newBalance = 0;
+
+    // 3. Cập nhật: Trừ tiền + Sửa lò (isCauldronBroken = false) cùng lúc
+    await databases.updateDocument(
+      APPWRITE_CONFIG.databaseId,
+      "profiles",
+      profile.$id,
+      {
+        currency: String(newBalance),
+        isCauldronBroken: false,
+      }
+    );
+
+    revalidatePath("/earn");
+    return { success: true, newBalance };
+  } catch (error) {
+    console.error("Lỗi sửa lò:", error);
+    return { success: false };
+  }
+};

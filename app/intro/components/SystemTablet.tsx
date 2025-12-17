@@ -9,14 +9,14 @@ export default function SystemTablet({
   index: number;
 }) {
   return (
-    <div className="group relative h-48 bg-[#080808] border border-white/5 overflow-hidden transition-all duration-500 hover:border-yellow-600/50 hover:shadow-[0_0_30px_rgba(234,179,8,0.1)]">
+    <div className="group relative h-48 bg-[#080808] border border-white/5 overflow-hidden transition-all duration-500 hover:border-yellow-600/50 hover:shadow-[0_0_30px_rgba(234,179,8,0.1)] transform-gpu">
       {/* Background (Static) */}
-      <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.03)_1px,transparent_1px)] bg-[size:20px_20px] opacity-20" />
+      <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.03)_1px,transparent_1px)] bg-[size:20px_20px] opacity-20 pointer-events-none" />
 
-      {/* CSS Animation Only (No JS) */}
-      <div className="absolute top-0 left-0 w-full h-[2px] bg-yellow-500 shadow-[0_0_10px_#eab308] opacity-0 group-hover:opacity-100 group-hover:animate-scan-down" />
+      {/* OPTIMIZED ANIMATION: Dùng translate thay vì top */}
+      <div className="absolute top-0 left-0 w-full h-[2px] bg-yellow-500 shadow-[0_0_10px_#eab308] opacity-0 group-hover:opacity-100 group-hover:animate-scan-down will-change-transform" />
 
-      <div className="absolute -top-4 -right-4 text-8xl font-black text-white/[0.02] group-hover:text-yellow-500/[0.05] transition-colors font-talisman select-none">
+      <div className="absolute -top-4 -right-4 text-8xl font-black text-white/[0.02] group-hover:text-yellow-500/[0.05] transition-colors font-talisman select-none pointer-events-none">
         0{index + 1}
       </div>
 
@@ -48,10 +48,15 @@ export default function SystemTablet({
         </div>
       </div>
 
-      {/* CSS in Server Component? OK if used with <style> or Tailwind classes */}
+      {/* Sửa lại keyframes dùng translate */}
       <style>{`
-        @keyframes scan-down { 0% { top: 0; opacity: 0; } 10% { opacity: 1; } 90% { opacity: 1; } 100% { top: 100%; opacity: 0; } }
-        .group:hover .group-hover\:animate-scan-down { animation: scan-down 2s linear infinite; }
+        @keyframes scan-down { 
+            0% { transform: translateY(0); opacity: 0; } 
+            10% { opacity: 1; } 
+            90% { opacity: 1; } 
+            100% { transform: translateY(200px); opacity: 0; } 
+        }
+        .group:hover .group-hover\\:animate-scan-down { animation: scan-down 2s linear infinite; }
       `}</style>
     </div>
   );

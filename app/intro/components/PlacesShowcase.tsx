@@ -92,7 +92,7 @@ export default function PlacesShowcase() {
       case "thien-co-lau":
         return "/earn"; // Ví dụ: Trang Game
       case "dong-chi-hoi":
-        return "/events/giang-sinh"; // Ví dụ: Trang Event
+        return "/giang-sinh"; // Ví dụ: Trang Event
       case "my-nhan-cac":
         return "/gallery"; // Ví dụ: Trang Ảnh
       case "chung-tu":

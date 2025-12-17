@@ -1,10 +1,8 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useMemo } from "react";
 
-import { Crown } from "lucide-react";
-
-// Local REALMS copy used for client indicator
+// Local REALMS copy
 const REALMS = [
   { name: "Phàm Nhân", color: "#78716c", threshold: 0 },
   { name: "Luyện Khí", color: "#bfdbfe", threshold: 10 },
@@ -17,12 +15,11 @@ const REALMS = [
   { name: "Độ Kiếp", color: "#fbbf24", threshold: 100 },
 ];
 
-// SpiritCursor (optimized using rAF and limited trail length)
+// --- 1. OPTIMIZED CURSOR: GPU HINTS & TRANSLATE3D ---
 function SpiritCursor() {
   type TrailPoint = { x: number; y: number; id: number; ts: number };
 
   const [trail, setTrail] = useState<TrailPoint[]>([]);
-
   const rafRef = useRef<number | null>(null);
   const idRef = useRef(1);
 
@@ -30,7 +27,8 @@ function SpiritCursor() {
     const LIFESPAN = 700;
 
     const handleMouseMove = (e: MouseEvent) => {
-      if (rafRef.current) cancelAnimationFrame(rafRef.current);
+      // Không cần cancel raf cũ để đảm bảo mượt mà nhất, chỉ update state trong raf
+      if (rafRef.current) return; // Throttling bằng rAF tự nhiên
 
       rafRef.current = requestAnimationFrame(() => {
         const now = Date.now();
@@ -39,17 +37,23 @@ function SpiritCursor() {
             ...prev,
             { x: e.clientX, y: e.clientY, id: idRef.current++, ts: now },
           ];
-          return next.slice(-20);
+          // Giới hạn số lượng điểm trail để giảm tải DOM
+          return next.slice(-15);
         });
+        rafRef.current = null;
       });
     };
 
     const prune = () => {
       const now = Date.now();
-      setTrail((prev) => prev.filter((p) => now - p.ts < LIFESPAN));
+      setTrail((prev) => {
+        const next = prev.filter((p) => now - p.ts < LIFESPAN);
+        // Nếu không có thay đổi, trả về prev để tránh re-render
+        return next.length === prev.length ? prev : next;
+      });
     };
 
-    window.addEventListener("mousemove", handleMouseMove);
+    window.addEventListener("mousemove", handleMouseMove, { passive: true });
     window.addEventListener("mouseleave", prune);
     const interval = setInterval(prune, 120);
 
@@ -72,15 +76,17 @@ function SpiritCursor() {
         return (
           <div
             key={point.id}
-            className="absolute rounded-full bg-[#fbbf24] blur-[3px]"
+            // OPTIMIZATION: will-change để báo trình duyệt tối ưu layer
+            className="absolute rounded-full bg-[#fbbf24] blur-[3px] will-change-[transform,opacity]"
             style={{
-              left: point.x,
-              top: point.y,
+              // OPTIMIZATION: translate3d kích hoạt Hardware Acceleration
+              transform: `translate3d(${point.x}px, ${point.y}px, 0) translate(-50%, -50%)`,
+              left: 0,
+              top: 0,
               width: `${size}px`,
               height: `${size}px`,
               opacity,
-              transform: "translate(-50%, -50%)",
-              transition: "opacity 200ms linear, transform 150ms linear",
+              transition: "opacity 200ms linear", // Bỏ transition transform để tránh conflict với mousemove
               boxShadow: `0 0 ${Math.round(size / 2)}px #b45309`,
             }}
           />
@@ -90,16 +96,22 @@ function SpiritCursor() {
   );
 }
 
+// --- 2. OPTIMIZED BAR: SCALE Y INSTEAD OF HEIGHT ---
 function CultivationBar({ scrollPercent }: { scrollPercent: number }) {
-  const currentRealm =
-    REALMS.slice()
-      .reverse()
-      .find((r) => scrollPercent >= r.threshold) || REALMS[0];
+  // Memoize để tránh tính toán lại không cần thiết
+  const currentRealm = useMemo(
+    () =>
+      REALMS.slice()
+        .reverse()
+        .find((r) => scrollPercent >= r.threshold) || REALMS[0],
+    [scrollPercent]
+  );
 
   return (
     <div className="fixed top-1/2 right-4 -translate-y-1/2 h-[50vh] w-16 flex flex-col items-center z-50 hidden xl:flex select-none">
       <div className="absolute inset-0 w-[1px] bg-gradient-to-b from-transparent via-stone-700 to-transparent left-1/2 -translate-x-1/2" />
 
+      {/* Info Box - Only updates text, cheap */}
       <div className="absolute top-[-60px] right-0 flex flex-col items-end w-48 transition-all duration-300">
         <span className="text-[9px] text-stone-500 uppercase tracking-widest mb-1">
           Cảnh Giới Hiện Tại
@@ -127,13 +139,12 @@ function CultivationBar({ scrollPercent }: { scrollPercent: number }) {
       <div className="relative w-full h-full">
         {REALMS.map((r, i) => {
           const isActive = scrollPercent >= r.threshold;
-
           return (
             <div
               key={i}
-              className="absolute left-1/2 -translate-x-1/2 w-3 h-3 rotate-45 border transition-all duration-500 flex items-center justify-center group"
+              className="absolute left-1/2 -translate-x-1/2 w-3 h-3 rotate-45 border transition-colors duration-500 flex items-center justify-center group"
               style={{
-                bottom: `${r.threshold}%`,
+                bottom: `${r.threshold}%`, // Static position, okay
                 borderColor: isActive ? r.color : "#333",
                 backgroundColor: isActive ? "#000" : "transparent",
                 boxShadow: isActive ? `0 0 10px ${r.color}` : "none",
@@ -144,7 +155,6 @@ function CultivationBar({ scrollPercent }: { scrollPercent: number }) {
                   isActive ? "bg-white" : "bg-transparent"
                 }`}
               />
-
               <span className="absolute right-6 opacity-0 group-hover:opacity-100 transition-opacity text-[10px] text-stone-400 whitespace-nowrap px-2 py-1 bg-black border border-stone-800">
                 {r.name}
               </span>
@@ -152,20 +162,26 @@ function CultivationBar({ scrollPercent }: { scrollPercent: number }) {
           );
         })}
 
+        {/* OPTIMIZATION: Dùng ScaleY thay vì Height để tránh Reflow (Layout Thrashing) */}
         <div
-          className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[2px] bg-gradient-to-t from-stone-900 via-amber-500 to-white shadow-[0_0_15px_#fbbf24] transition-all duration-100 ease-linear rounded-full"
-          style={{ height: `${scrollPercent}%` }}
+          className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[2px] bg-gradient-to-t from-stone-900 via-amber-500 to-white shadow-[0_0_15px_#fbbf24] rounded-full will-change-transform"
+          style={{
+            height: "100%", // Luôn set 100% height
+            transformOrigin: "bottom", // Neo ở đáy
+            transform: `scaleY(${scrollPercent / 100})`, // Scale theo %
+            // Bỏ transition duration cho thanh này để nó phản hồi tức thì với scroll, tránh cảm giác lag
+          }}
         />
       </div>
     </div>
   );
 }
 
+// --- 3. OPTIMIZED INTERACTIVE: THROTTLED SCROLL ---
 export default function Interactive() {
   const [scrollPercent, setScrollPercent] = useState(0);
 
   useEffect(() => {
-    // mark mounted (for CSS transitions if needed)
     document.documentElement.classList.add("phim-mounted");
 
     const nav = document.querySelector("[data-phim-nav]");
@@ -173,15 +189,17 @@ export default function Interactive() {
     const buttons = Array.from(document.querySelectorAll("[data-filter]"));
 
     const applyFilter = (name: string) => {
+      // DOM manipulation trực tiếp là tốt cho performance ở đây
       buttons.forEach((b) => {
-        if ((b as HTMLElement).dataset.filter === name) {
-          b.classList.add(
+        const el = b as HTMLElement;
+        if (el.dataset.filter === name) {
+          el.classList.add(
             "border-[#ffd700]",
             "bg-[#ffd700]/5",
             "text-[#ffd700]"
           );
         } else {
-          b.classList.remove(
+          el.classList.remove(
             "border-[#ffd700]",
             "bg-[#ffd700]/5",
             "text-[#ffd700]"
@@ -192,51 +210,69 @@ export default function Interactive() {
       grid.forEach((card) => {
         const el = (card as HTMLElement).dataset.element;
         if (!el) return;
-        if (name === "Tất Cả" || el === name) {
-          (card as HTMLElement).style.display = "";
-        } else {
-          (card as HTMLElement).style.display = "none";
-        }
+        (card as HTMLElement).style.display =
+          name === "Tất Cả" || el === name ? "" : "none";
       });
     };
 
-    // initial filter = Tất Cả
     applyFilter("Tất Cả");
 
     buttons.forEach((btn) => {
-      btn.addEventListener("click", (e) => {
+      btn.addEventListener("click", () => {
         const name = (btn as HTMLElement).dataset.filter || "Tất Cả";
         applyFilter(name);
       });
     });
 
+    // OPTIMIZATION: Bọc scroll handler trong requestAnimationFrame
+    let ticking = false;
     const handleScroll = () => {
-      const totalHeight =
-        document.documentElement.scrollHeight - window.innerHeight;
-      const currentScroll = window.scrollY;
-      const pct = Math.min(
-        100,
-        Math.max(0, (currentScroll / Math.max(1, totalHeight)) * 100)
-      );
-      setScrollPercent(pct);
-
-      if (nav) {
-        if (currentScroll > window.innerHeight)
-          nav.classList.add("bg-[#050505]/95", "backdrop-blur-md", "shadow-lg");
-        else
-          nav.classList.remove(
-            "bg-[#050505]/95",
-            "backdrop-blur-md",
-            "shadow-lg"
+      if (!ticking) {
+        window.requestAnimationFrame(() => {
+          const totalHeight =
+            document.documentElement.scrollHeight - window.innerHeight;
+          const currentScroll = window.scrollY;
+          const pct = Math.min(
+            100,
+            Math.max(0, (currentScroll / Math.max(1, totalHeight)) * 100)
           );
+
+          setScrollPercent(pct);
+
+          if (nav) {
+            if (currentScroll > window.innerHeight)
+              nav.classList.add(
+                "bg-[#050505]/95",
+                "backdrop-blur-md",
+                "shadow-lg"
+              );
+            else
+              nav.classList.remove(
+                "bg-[#050505]/95",
+                "backdrop-blur-md",
+                "shadow-lg"
+              );
+          }
+
+          ticking = false;
+        });
+        ticking = true;
       }
     };
 
     window.addEventListener("scroll", handleScroll, { passive: true });
-    handleScroll();
+    // Initial call
+    const totalHeight =
+      document.documentElement.scrollHeight - window.innerHeight;
+    const pct = Math.min(
+      100,
+      Math.max(0, (window.scrollY / Math.max(1, totalHeight)) * 100)
+    );
+    setScrollPercent(pct);
 
     return () => {
       window.removeEventListener("scroll", handleScroll);
+      // Clean up clones to prevent dupes if re-mounted (optional based on your setup)
       buttons.forEach((btn) => btn.replaceWith(btn.cloneNode(true)));
     };
   }, []);

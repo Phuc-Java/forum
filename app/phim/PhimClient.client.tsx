@@ -9,7 +9,27 @@ export default function PhimClient() {
   const pointsRef = useRef<Array<{ el: HTMLDivElement; ts: number }>>([]);
 
   useEffect(() => {
-    // Create cursor container
+    // --- 1. SETUP DOM CACHE (Tối ưu cực quan trọng) ---
+    // Tìm element 1 lần duy nhất, tránh tìm lại khi scroll
+    const domCache = {
+      fill: document.querySelector<HTMLElement>("[data-phim-fill]"),
+      nameEl: document.querySelector<HTMLElement>("[data-phim-current-name]"),
+      pctEl: document.querySelector<HTMLElement>("[data-phim-current-pct]"),
+      nav: document.querySelector<HTMLElement>("[data-phim-nav]"),
+      countEl: document.querySelector<HTMLElement>("[data-phim-count]"),
+      gridRoot: document.querySelector("[data-phim-grid]"),
+      realms: Array.from(
+        document.querySelectorAll<HTMLElement>("[data-phim-realm]")
+      ),
+    };
+
+    // Chuẩn bị CSS cho thanh fill để dùng GPU Scale
+    if (domCache.fill) {
+      domCache.fill.style.transformOrigin = "bottom"; // Neo ở đáy
+      domCache.fill.style.willChange = "transform"; // Báo trước cho GPU
+    }
+
+    // --- 2. CURSOR LOGIC (GPU OPTIMIZED) ---
     const root = document.createElement("div");
     root.className = "pointer-events-none fixed inset-0 z-[9999]";
     document.body.appendChild(root);
@@ -24,20 +44,24 @@ export default function PhimClient() {
       rafRef.current = requestAnimationFrame(() => {
         const now = Date.now();
         const el = document.createElement("div");
-        el.className = "absolute rounded-full bg-[#fbbf24] blur-[3px]";
+        // OPTIMIZATION: will-change để tối ưu animation
+        el.className =
+          "absolute rounded-full bg-[#fbbf24] blur-[3px] will-change-[transform,opacity]";
         const size = 12;
-        el.style.left = `${e.clientX}px`;
-        el.style.top = `${e.clientY}px`;
+
+        // OPTIMIZATION: Dùng translate3d thay vì top/left để tránh Reflow
+        // translate3d(x, y, 0) kích hoạt Hardware Acceleration
+        el.style.transform = `translate3d(${e.clientX}px, ${e.clientY}px, 0) translate(-50%, -50%)`;
         el.style.width = `${size}px`;
         el.style.height = `${size}px`;
         el.style.opacity = `1`;
-        el.style.transform = "translate(-50%, -50%)";
-        el.style.transition = "opacity 200ms linear, transform 150ms linear";
+        // Transition opacity thôi, transform do JS lo
+        el.style.transition = "opacity 200ms linear";
         el.style.boxShadow = `0 0 ${Math.round(size / 2)}px #b45309`;
+
         cursorRoot.current!.appendChild(el);
 
         pointsRef.current.push({ el, ts: now });
-        // keep bounded length
         if (pointsRef.current.length > 24) {
           const removed = pointsRef.current.shift();
           if (removed) removed.el.remove();
@@ -54,6 +78,8 @@ export default function PhimClient() {
         }
         const ageRatio = Math.max(0, 1 - (now - p.ts) / LIFESPAN);
         const size = Math.max(2, Math.min(18, Math.round(ageRatio * 18)));
+
+        // Cập nhật size & opacity
         p.el.style.width = `${size}px`;
         p.el.style.height = `${size}px`;
         p.el.style.opacity = `${ageRatio}`;
@@ -61,12 +87,14 @@ export default function PhimClient() {
       });
     };
 
-    window.addEventListener("mousemove", handleMouseMove);
+    window.addEventListener("mousemove", handleMouseMove, { passive: true });
     window.addEventListener("mouseleave", prune);
     const interval = setInterval(prune, 100);
 
-    // Scroll + cultivation bar updates
-    const updateScroll = () => {
+    // --- 3. SCROLL LOGIC (THROTTLED & CACHED) ---
+    let ticking = false; // Biến cờ để throttle scroll event
+
+    const updateScrollLogic = () => {
       const totalHeight =
         document.documentElement.scrollHeight - window.innerHeight;
       const currentScroll = window.scrollY;
@@ -75,73 +103,100 @@ export default function PhimClient() {
         Math.max(0, (currentScroll / Math.max(1, totalHeight)) * 100)
       );
 
-      const fill = document.querySelector<HTMLElement>("[data-phim-fill]");
-      const nameEl = document.querySelector<HTMLElement>(
-        "[data-phim-current-name]"
-      );
-      const pctEl = document.querySelector<HTMLElement>(
-        "[data-phim-current-pct]"
-      );
-      const realms = Array.from(
-        document.querySelectorAll<HTMLElement>("[data-phim-realm]")
-      );
+      // OPTIMIZATION: Dùng transform scaleY thay vì height
+      // scaleY(0.5) tương đương 50% height nhưng mượt hơn nhiều
+      if (domCache.fill) {
+        domCache.fill.style.transform = `scaleY(${pct / 100})`;
+      }
 
-      if (fill) fill.style.height = `${pct}%`;
-      if (pctEl) pctEl.textContent = `${pct.toFixed(1)}% Thiên Đạo`;
+      if (domCache.pctEl) {
+        // Chỉ update text nếu cần thiết (React lo việc này tốt hơn, nhưng vanilla thì nên check)
+        domCache.pctEl.textContent = `${pct.toFixed(1)}% Thiên Đạo`;
+      }
 
-      realms.forEach((r) => {
+      // Realm updates (Dùng cache, không query lại)
+      domCache.realms.forEach((r) => {
         const threshold = Number(r.dataset.threshold || 0);
         const color = r.dataset.color || "#333";
+        // Query bên trong realm con thì ok vì số lượng ít và đã cached realm cha
         const dot = r.querySelector<HTMLElement>("div");
+
         if (pct >= threshold) {
-          r.style.borderColor = color;
-          r.style.backgroundColor = "#000";
-          r.style.boxShadow = `0 0 10px ${color}`;
-          if (dot) dot.style.backgroundColor = "#fff";
-          if (nameEl) nameEl.style.color = color;
+          // Chỉ set style nếu chưa active để tránh paint lại (Browser optimize cái này rồi nhưng code rõ ràng hơn)
+          if (r.style.borderColor !== color) {
+            r.style.borderColor = color;
+            r.style.backgroundColor = "#000";
+            r.style.boxShadow = `0 0 10px ${color}`;
+            if (dot) dot.style.backgroundColor = "#fff";
+            if (domCache.nameEl) domCache.nameEl.style.color = color;
+          }
         } else {
-          r.style.borderColor = "#333";
-          r.style.backgroundColor = "transparent";
-          r.style.boxShadow = "none";
-          if (dot) dot.style.backgroundColor = "transparent";
+          if (
+            r.style.borderColor !== "rgb(51, 51, 51)" &&
+            r.style.borderColor !== "#333"
+          ) {
+            r.style.borderColor = "#333";
+            r.style.backgroundColor = "transparent";
+            r.style.boxShadow = "none";
+            if (dot) dot.style.backgroundColor = "transparent";
+          }
         }
       });
 
-      // set nearest current realm name
-      const active = realms
+      // Nearest Realm
+      const active = domCache.realms
         .slice()
         .reverse()
         .find((r) => pct >= Number(r.dataset.threshold || 0));
-      if (nameEl && active)
-        nameEl.textContent = active.dataset.name || nameEl.textContent;
 
-      // nav background toggle
-      const nav = document.querySelector<HTMLElement>("[data-phim-nav]");
-      if (nav) {
-        if (currentScroll > window.innerHeight)
-          nav.classList.add("bg-[#050505]/95", "backdrop-blur-md", "shadow-lg");
-        else
-          nav.classList.remove(
-            "bg-[#050505]/95",
-            "backdrop-blur-md",
-            "shadow-lg"
-          );
+      if (domCache.nameEl && active) {
+        const newName = active.dataset.name || "";
+        if (domCache.nameEl.textContent !== newName) {
+          domCache.nameEl.textContent = newName;
+        }
+      }
+
+      // Nav background
+      if (domCache.nav) {
+        if (currentScroll > window.innerHeight) {
+          if (!domCache.nav.classList.contains("shadow-lg")) {
+            domCache.nav.classList.add(
+              "bg-[#050505]/95",
+              "backdrop-blur-md",
+              "shadow-lg"
+            );
+          }
+        } else {
+          if (domCache.nav.classList.contains("shadow-lg")) {
+            domCache.nav.classList.remove(
+              "bg-[#050505]/95",
+              "backdrop-blur-md",
+              "shadow-lg"
+            );
+          }
+        }
+      }
+
+      ticking = false; // Reset cờ
+    };
+
+    const onScroll = () => {
+      if (!ticking) {
+        window.requestAnimationFrame(updateScrollLogic);
+        ticking = true;
       }
     };
 
-    window.addEventListener("scroll", updateScroll, { passive: true });
-    updateScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    // Chạy 1 lần đầu
+    updateScrollLogic();
 
-    // Filter handling (delegated)
-    const navRoot = document.querySelector("[data-phim-nav]");
-    const gridRoot = document.querySelector("[data-phim-grid]");
-    const countEl = document.querySelector<HTMLElement>("[data-phim-count]");
-
-    // Global delegated click handler for scroll actions and filters
+    // --- 4. CLICK HANDLERS (Delegated) ---
+    // Global delegated click handler
     const handleDocumentClick = (e: Event) => {
       const target = e.target as HTMLElement;
 
-      // smooth scroll buttons: data-scroll-to="next"
+      // Scroll To
       const scrollBtn = target.closest(
         "[data-scroll-to]"
       ) as HTMLElement | null;
@@ -153,66 +208,60 @@ export default function PhimClient() {
         return;
       }
 
-      // delegate to filter handler if clicked inside nav
+      // Delegate to filter handler if clicked inside nav
       const filterBtn = target.closest("[data-filter]") as HTMLElement | null;
-      if (filterBtn && navRoot && gridRoot) {
-        // reuse existing logic by simulating a click on navRoot
-        // (call the same handler used below)
-        // Note: we handle filter below via navRoot click listener, so return here
-        return;
+      if (filterBtn && domCache.nav && domCache.gridRoot) {
+        // Handle filter logic directly here
+        const name = filterBtn.dataset.filter || "Tất Cả";
+
+        // Toggle Visuals
+        domCache.nav
+          .querySelectorAll("[data-filter]")
+          .forEach((b) =>
+            b.classList.remove(
+              "border-[#ffd700]",
+              "bg-[#ffd700]/5",
+              "text-[#ffd700]"
+            )
+          );
+        filterBtn.classList.add(
+          "border-[#ffd700]",
+          "bg-[#ffd700]/5",
+          "text-[#ffd700]"
+        );
+
+        // Filter Grid
+        const cards = Array.from(
+          domCache.gridRoot.querySelectorAll<HTMLElement>("[data-element]")
+        );
+        let visible = 0;
+        cards.forEach((c) => {
+          const el = c.dataset.element || "";
+          const shouldShow = name === "Tất Cả" || el === name;
+          const isHidden = c.style.display === "none";
+          if (shouldShow) {
+            if (isHidden) c.style.display = "";
+            visible++;
+          } else {
+            if (!isHidden) c.style.display = "none";
+          }
+        });
+
+        if (domCache.countEl) domCache.countEl.textContent = String(visible);
       }
     };
 
     document.addEventListener("click", handleDocumentClick);
 
-    const handleFilterClick = (e: Event) => {
-      const target = e.target as HTMLElement;
-      const btn = target.closest("[data-filter]") as HTMLElement | null;
-      if (!btn || !gridRoot) return;
-      const name = btn.dataset.filter || "Tất Cả";
-
-      // toggle button visuals
-      navRoot
-        ?.querySelectorAll("[data-filter]")
-        .forEach((b) =>
-          b.classList.remove(
-            "border-[#ffd700]",
-            "bg-[#ffd700]/5",
-            "text-[#ffd700]"
-          )
-        );
-      btn.classList.add("border-[#ffd700]", "bg-[#ffd700]/5", "text-[#ffd700]");
-
-      const cards = Array.from(
-        gridRoot.querySelectorAll<HTMLElement>("[data-element]")
-      );
-      let visible = 0;
-      cards.forEach((c) => {
-        const el = c.dataset.element || "";
-        const shouldShow = name === "Tất Cả" || el === name;
-        const isHidden = c.style.display === "none";
-        if (shouldShow) {
-          if (isHidden) c.style.display = "";
-          visible++;
-        } else {
-          if (!isHidden) c.style.display = "none";
-        }
-      });
-
-      if (countEl) countEl.textContent = String(visible);
-    };
-
-    navRoot?.addEventListener("click", handleFilterClick);
-
+    // Cleanup
     return () => {
       window.removeEventListener("mousemove", handleMouseMove);
       window.removeEventListener("mouseleave", prune);
       if (rafRef.current) cancelAnimationFrame(rafRef.current);
       clearInterval(interval);
-      window.removeEventListener("scroll", updateScroll);
-      navRoot?.removeEventListener("click", handleFilterClick);
+      window.removeEventListener("scroll", onScroll);
       document.removeEventListener("click", handleDocumentClick);
-      // cleanup cursor
+
       cursorRoot.current?.remove();
       pointsRef.current.forEach((p) => p.el.remove());
       pointsRef.current = [];

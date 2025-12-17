@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import { SCROLL_PAINTINGS } from "@/components/data/film-data";
 
@@ -8,26 +8,44 @@ export default function SpiritScroll() {
   const loopItems = [...SCROLL_PAINTINGS, ...SCROLL_PAINTINGS];
   const containerRef = useRef<HTMLDivElement | null>(null);
   const innerRef = useRef<HTMLDivElement | null>(null);
+
+  // Refs cho Animation
   const rafRef = useRef<number | null>(null);
   const posRef = useRef<{ x: number }>({ x: 0 });
+
+  // Refs cho Dragging Physics
   const draggingRef = useRef<boolean>(false);
   const lastTimeRef = useRef<number | null>(null);
   const lastMoveTimeRef = useRef<number | null>(null);
   const lastMoveXRef = useRef<number>(0);
   const velocityRef = useRef<number>(0);
 
-  const SPEED = 25; // Tốc độ trôi nhẹ nhàng như nước chảy
+  // Ref để cache chiều rộng (Tránh Layout Thrashing)
+  const widthRef = useRef<number>(0);
 
+  const SPEED = 25;
+
+  // --- 1. TỐI ƯU HÓA LOGIC RENDER LOOP ---
   useEffect(() => {
     const inner = innerRef.current;
     if (!inner) return;
-    const FRICTION = 4; // Ma sát
+
+    // Tính toán chiều rộng 1 lần ban đầu
+    const calculateWidth = () => {
+      if (inner) widthRef.current = inner.scrollWidth / 2;
+    };
+    calculateWidth();
+    // Cập nhật lại nếu resize màn hình (để đảm bảo responsive)
+    window.addEventListener("resize", calculateWidth);
+
+    const FRICTION = 4;
 
     const update = (time: number) => {
       if (lastTimeRef.current == null) lastTimeRef.current = time;
       const dt = (time - lastTimeRef.current) / 1000;
       lastTimeRef.current = time;
 
+      // Logic Vật lý (Giữ nguyên)
       if (!draggingRef.current) {
         if (Math.abs(velocityRef.current) > 0.5) {
           posRef.current.x += velocityRef.current * dt;
@@ -38,22 +56,30 @@ export default function SpiritScroll() {
         }
       }
 
-      const halfWidth = inner.scrollWidth / 2;
-      if (posRef.current.x <= -halfWidth) posRef.current.x += halfWidth;
-      if (posRef.current.x >= 0) posRef.current.x -= halfWidth;
+      // Logic Loop Vô tận (Đã tối ưu: Dùng giá trị cached widthRef)
+      const halfWidth = widthRef.current;
+      // Chỉ check khi halfWidth > 0 để tránh lỗi ban đầu
+      if (halfWidth > 0) {
+        if (posRef.current.x <= -halfWidth) posRef.current.x += halfWidth;
+        if (posRef.current.x >= 0) posRef.current.x -= halfWidth;
+      }
 
+      // Render: Dùng translate3d để kích hoạt GPU
       inner.style.transform = `translate3d(${posRef.current.x}px,0,0)`;
       rafRef.current = requestAnimationFrame(update);
     };
+
     rafRef.current = requestAnimationFrame(update);
+
     return () => {
+      window.removeEventListener("resize", calculateWidth);
       if (rafRef.current !== null) {
         cancelAnimationFrame(rafRef.current);
       }
     };
   }, []);
 
-  // Handlers (Giữ nguyên logic vật lý mượt mà của đạo hữu)
+  // --- 2. HANDLERS (Giữ nguyên logic cũ) ---
   useEffect(() => {
     const container = containerRef.current;
     if (!container) return;
@@ -107,12 +133,12 @@ export default function SpiritScroll() {
 
   return (
     <div className="relative w-screen -ml-[50vw] left-1/2 overflow-hidden py-16 select-none bg-[#0a0500]">
-      {/* Decorative Line (Sợi tơ vàng) */}
-      <div className="absolute top-0 bottom-0 left-1/2 w-[1px] bg-gradient-to-b from-transparent via-[#ffd700] to-transparent z-20 shadow-[0_0_15px_#ffd700] opacity-60" />
+      {/* Decorative Line (GPU Static Layer) */}
+      <div className="absolute top-0 bottom-0 left-1/2 w-[1px] bg-gradient-to-b from-transparent via-[#ffd700] to-transparent z-20 shadow-[0_0_15px_#ffd700] opacity-60 pointer-events-none" />
 
       {/* Ancient Text */}
       <div
-        className="absolute top-4 left-1/2 -translate-x-1/2 text-2xl text-[#cba135] font-serif z-20 opacity-80"
+        className="absolute top-4 left-1/2 -translate-x-1/2 text-2xl text-[#cba135] font-serif z-20 opacity-80 pointer-events-none"
         style={{ letterSpacing: "0.5em" }}
       >
         ✦ VẠN CỔ HỌA QUYỂN ✦
@@ -128,6 +154,7 @@ export default function SpiritScroll() {
             "linear-gradient(90deg, rgba(0,0,0,0) 0%, rgba(0,0,0,1) 15%, rgba(0,0,0,1) 85%, rgba(0,0,0,0) 100%)",
         }}
       >
+        {/* Container chuyển động: will-change-transform */}
         <div
           ref={innerRef}
           className="flex gap-10 items-center w-max will-change-transform px-10"
@@ -135,21 +162,27 @@ export default function SpiritScroll() {
           {loopItems.map((src, i) => (
             <div
               key={i}
-              className="group relative flex-none w-[200px] h-[300px] flex items-center justify-center bg-[#1a120b] border-[4px] border-[#3e2723] rounded-sm overflow-hidden transition-all duration-700 ease-out shadow-2xl hover:scale-105 hover:-translate-y-4 hover:border-[#ffd700] hover:shadow-[0_20px_50px_rgba(255,215,0,0.15)]"
+              // GPU Hint: transform-gpu
+              // Image Optimization: Thêm sizes
+              className="group relative flex-none w-[200px] h-[300px] flex items-center justify-center bg-[#1a120b] border-[4px] border-[#3e2723] rounded-sm overflow-hidden transition-all duration-700 ease-out shadow-2xl hover:scale-105 hover:-translate-y-4 hover:border-[#ffd700] hover:shadow-[0_20px_50px_rgba(255,215,0,0.15)] transform-gpu"
             >
-              {/* Giấy cũ texture */}
+              {/* Giấy cũ texture - Static */}
               <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/aged-paper.png')] opacity-20 z-10 pointer-events-none" />
 
               <Image
                 src={src}
                 alt={`scroll-${i}`}
                 fill
+                // QUAN TRỌNG: sizes giúp Next.js tải ảnh nhỏ vừa khung 200px thay vì ảnh gốc to
+                sizes="200px"
+                // Loading lazy mặc định là tốt, nhưng nếu muốn load nhanh hơn có thể thêm priority cho vài tấm đầu
+                priority={i < 10}
                 className="object-cover opacity-60 sepia-[0.6] group-hover:sepia-0 group-hover:opacity-100 transition-all duration-700"
                 draggable={false}
               />
 
-              {/* Vertical Text (Câu đối) */}
-              <div className="absolute top-2 right-2 w-6 flex flex-col items-center gap-1 z-20 opacity-0 group-hover:opacity-100 transition-opacity duration-500 delay-100">
+              {/* Vertical Text (Câu đối) - Pointer events none để không cản trở drag */}
+              <div className="absolute top-2 right-2 w-6 flex flex-col items-center gap-1 z-20 opacity-0 group-hover:opacity-100 transition-opacity duration-500 delay-100 pointer-events-none">
                 <div className="w-[1px] h-full bg-white/20 absolute right-[-4px]" />
                 {["Thiên", "Địa", "Huyền", "Hoàng"].map((char, idx) => (
                   <span
