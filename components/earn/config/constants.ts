@@ -55,6 +55,20 @@ export const GAME_CONFIG = {
     cost: 1200,
     icon: "🃏",
   },
+  ASCENSION: {
+    id: "ASCENSION",
+    name: "Phi Thăng Độ Kiếp",
+    desc: "Hấp thụ linh khí, thăng thiên càng cao thưởng càng lớn. Dừng trước khi sét đánh!",
+    cost: 1000,
+    icon: "🌩️",
+  },
+  ELEMENTAL: {
+    id: "ELEMENTAL",
+    name: "Ngũ Hành Trận",
+    desc: "Kim Mộc Thủy Hỏa Thổ. Dùng trí tuệ khắc chế tâm ma.",
+    cost: 500,
+    icon: "☯️",
+  },
 };
 
 export type GameMode = keyof typeof GAME_CONFIG | "LOBBY";

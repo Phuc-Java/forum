@@ -20,11 +20,13 @@ import { BeastGame } from "./games/BeastGame";
 import { AlchemyGame } from "./games/AlchemyGame";
 import { PlinkoGame } from "./games/PlinkoGame";
 import { CardDuelGame } from "./games/CardDuelGame";
-
+import { AscensionGame } from "./games/AscensionGame";
+import { ElementalGame } from "./games/ElementalGame";
 export default function GameGrid() {
   const [balance, setBalance] = useState(0);
   const [activeMode, setActiveMode] = useState<GameMode>("LOBBY");
   const [userId, setUserId] = useState<string | null>(null);
+  const [profileDocId, setProfileDocId] = useState<string | null>(null);
 
   // State lò luyện đan
   const [isCauldronBroken, setIsCauldronBroken] = useState(false);
@@ -57,6 +59,7 @@ export default function GameGrid() {
         if (profileRes.documents.length > 0) {
           const doc = profileRes.documents[0];
           setBalance(Number(doc.currency) || 0);
+          setProfileDocId(doc.$id);
           setIsCauldronBroken(doc.isCauldronBroken || false);
         } else {
           setBalance(10000); // Default cho người mới
@@ -73,13 +76,46 @@ export default function GameGrid() {
     async (newBalance: number) => {
       if (!userId) return;
       try {
-        // ... Logic sync appwrite (ẩn đi cho gọn)
-        console.log(`[APPWRITE]: Synced ${newBalance}`);
+        const client = new Client()
+          .setEndpoint(APPWRITE_CONFIG.endpoint)
+          .setProject(APPWRITE_CONFIG.projectId);
+        const databases = new Databases(client);
+
+        // If we already have profile doc id, update directly
+        if (profileDocId) {
+          await databases.updateDocument(
+            APPWRITE_CONFIG.databaseId,
+            "profiles",
+            profileDocId,
+            { currency: String(newBalance) }
+          );
+          return;
+        }
+
+        // Otherwise try to lookup by userId then update
+        const res = await databases.listDocuments(
+          APPWRITE_CONFIG.databaseId,
+          "profiles",
+          [Query.equal("userId", userId), Query.limit(1)]
+        );
+        if (res.documents.length > 0) {
+          const doc = res.documents[0];
+          setProfileDocId(doc.$id);
+          await databases.updateDocument(
+            APPWRITE_CONFIG.databaseId,
+            "profiles",
+            doc.$id,
+            { currency: String(newBalance) }
+          );
+        } else {
+          // No profile found - skip creating here to avoid schema issues
+          console.warn("[APPWRITE]: No profile document found to sync balance");
+        }
       } catch (error) {
         console.error("[APPWRITE]: Sync failed", error);
       }
     },
-    [userId]
+    [userId, profileDocId]
   );
 
   const handleCost = useCallback(
@@ -286,6 +322,20 @@ export default function GameGrid() {
                 )}
                 {activeMode === "CARD" && (
                   <CardDuelGame
+                    onPlayCost={handleCost}
+                    onReward={handleReward}
+                    balance={balance}
+                  />
+                )}
+                {activeMode === "ASCENSION" && (
+                  <AscensionGame
+                    onPlayCost={handleCost}
+                    onReward={handleReward}
+                    balance={balance}
+                  />
+                )}
+                {activeMode === "ELEMENTAL" && (
+                  <ElementalGame
                     onPlayCost={handleCost}
                     onReward={handleReward}
                     balance={balance}
