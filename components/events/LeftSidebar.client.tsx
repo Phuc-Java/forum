@@ -10,10 +10,9 @@ export default function LeftSidebar() {
 
   useEffect(() => {
     let gsap: any = null;
-    // FIX: Đổi từ unknown sang any để TypeScript không báo lỗi dòng 284
     let Draggable: any = null;
 
-    // --- AUDIO LOGIC ---
+    // --- AUDIO LOGIC (GIỮ NGUYÊN) ---
     let magicAudio: HTMLAudioElement | null = null;
     let magicPlayed = false;
     let magicLocateAttempted = false;
@@ -71,11 +70,11 @@ export default function LeftSidebar() {
       maxTemp: 110,
       defaultTemp: 70,
       gradientColors: [
-        "#00eaff", // Cyan (Lạnh)
-        "#0099ff", // Blue
-        "#bd00ff", // Purple
-        "#ff0099", // Pink
-        "#ff0044", // Red (Nóng)
+        "#a29bfe", // Tím nhạt (Lạnh)
+        "#6c5ce7", // Tím đậm
+        "#e84393", // Hồng
+        "#d63031", // Đỏ
+        "#ff7675", // Cam đào (Nóng)
       ],
       gradientStops: [0, 0.2, 0.5, 0.8, 1],
       thresholds: { snow: 40, heart: 110 },
@@ -139,15 +138,15 @@ export default function LeftSidebar() {
       const rect = els.track.getBoundingClientRect();
       const trackH = rect.height;
 
-      // Vẽ vạch chia: Đỉnh là Max (110), Đáy là Min (20)
+      // Vẽ vạch chia
       for (let t = max; t >= min; t -= 5) {
         const el = document.createElement("div");
         el.className = "scale-mark";
         const tick = document.createElement("div");
         tick.className = "tick";
 
-        if (t % 20 === 0 || t === max || t === min) tick.style.width = "12px";
-        else tick.style.width = "6px";
+        if (t % 20 === 0 || t === max || t === min) tick.style.width = "16px";
+        else tick.style.width = "8px";
 
         // Tính vị trí top
         const y = ((max - t) / range) * (trackH - 1);
@@ -177,15 +176,17 @@ export default function LeftSidebar() {
         if (dist < maxDist) {
           const p = 1 - dist / maxDist;
           (gsap as any).set(el, {
-            opacity: 0.8 + p * 0.2,
-            scale: 1 + p * 0.3,
-            color: "#fff",
+            opacity: 0.9 + p * 0.1,
+            scale: 1 + p * 0.2,
+            color: "var(--glow-color)",
+            zIndex: 10,
           });
         } else {
           (gsap as any).set(el, {
-            opacity: 0.2,
+            opacity: 0.3,
             scale: 1,
-            color: "rgba(255,255,255,0.3)",
+            color: "rgba(255,255,255,0.2)",
+            zIndex: 1,
           });
         }
       });
@@ -193,21 +194,27 @@ export default function LeftSidebar() {
 
     function updateStatusText(t: number) {
       let txt = "";
-      if (t < 35) txt = "Người lạ";
-      else if (t < 55) txt = "Bạn bè";
-      else if (t < 75) txt = "Thích thích";
-      else if (t < 90) txt = "Crush";
-      else if (t < 110) txt = "Yêu lắm";
-      else txt = "Chung thủy";
+      if (t < 35) txt = "Lạnh Lẽo";
+      else if (t < 55) txt = "Hờ Hững";
+      else if (t < 75) txt = "Rung Động";
+      else if (t < 90) txt = "Cuồng Nhiệt";
+      else if (t < 110) txt = "Cháy Bỏng";
+      else txt = "Vĩnh Cửu";
       if (els.statusText) els.statusText.textContent = txt;
     }
 
     function applyColorTheme(color: string) {
       if (els.root) els.root.style.setProperty("--glow-color", color);
-      if (els.tempValue) els.tempValue.style.color = color;
-      if (els.statusText) els.statusText.style.color = color;
+      if (els.tempValue) {
+        els.tempValue.style.color = color;
+        els.tempValue.style.textShadow = `0 0 20px ${color}`;
+      }
+      if (els.statusText) {
+        els.statusText.style.color = color;
+        els.statusText.style.textShadow = `0 0 10px ${color}`;
+      }
       if (els.mercury)
-        els.mercury.style.boxShadow = `0 0 20px ${color}, 0 0 40px ${color}`;
+        els.mercury.style.boxShadow = `0 0 30px ${color}, 0 0 60px ${color}`;
     }
 
     function updateSystemFromY(yPos: number) {
@@ -228,6 +235,7 @@ export default function LeftSidebar() {
       applyColorTheme(color);
       updateStatusText(currentTemp);
 
+      // Play music logic
       if (!magicPlayed && currentTemp >= CONFIG.maxTemp) {
         (async () => {
           const src = await locateMagicSrc();
@@ -267,12 +275,13 @@ export default function LeftSidebar() {
     }
 
     function initDrag() {
-      // Ở đây biến Draggable đã là 'any' nên sẽ không bị lỗi 'Property create does not exist'
       if (Draggable && els.knob) {
         Draggable.create(els.knob, {
           type: "y",
           bounds: { minY: knobBounds.minY, maxY: knobBounds.maxY },
           inertia: true,
+          // GPU Optimization
+          force3D: true,
           onDrag: function () {
             // @ts-ignore
             updateSystemFromY(this.y);
@@ -285,7 +294,7 @@ export default function LeftSidebar() {
       }
     }
 
-    // --- SNOW PARTICLES ---
+    // --- SNOW PARTICLES (OPTIMIZED) ---
     const maxSnowSpawnInterval = 5;
     const maxSnowFallDuration = 7;
     function createSnowParticle() {
@@ -295,11 +304,12 @@ export default function LeftSidebar() {
       els.uiParticles.appendChild(p);
       const vw = window.innerWidth,
         vh = window.innerHeight;
-      const size = Math.random() * 8 + 4;
-      const baseOpacity = 0.7 + Math.random() * 0.3;
+      const size = Math.random() * 6 + 2;
+      const baseOpacity = 0.5 + Math.random() * 0.5;
+
+      // Use CSS var for dynamic color
       p.style.width = p.style.height = size + "px";
       p.style.background = `radial-gradient(circle, rgba(255,255,255,${baseOpacity}) 0%, transparent 100%)`;
-      p.style.boxShadow = "0 0 10px rgba(255,255,255,0.8)";
 
       const startX = Math.random() * vw;
       gsap.set(p, { x: startX, y: -50, opacity: 0 });
@@ -358,21 +368,21 @@ export default function LeftSidebar() {
       snowParticleIntervalId = window.setInterval(createSnowParticle, interval);
     }
 
-    // --- HEART PARTICLES ---
+    // --- HEART PARTICLES (OPTIMIZED) ---
     function createHeartParticle() {
       if (!els.uiParticles) return;
       const p = document.createElement("div");
       p.className = "particle heart";
-      p.innerHTML = "❤";
+      p.innerHTML = "✦"; // Dùng ngôi sao hoặc tim cách điệu
       els.uiParticles.appendChild(p);
-      const vw = window.innerWidth,
-        vh = window.innerHeight;
+      const vh = window.innerHeight;
       const size = Math.random() * 20 + 10;
-      p.style.fontSize = size + "px";
-      p.style.color = "#ff0044";
-      p.style.textShadow = "0 0 10px rgba(255,0,68,0.8)";
 
-      const startX = Math.random() * vw;
+      p.style.fontSize = size + "px";
+      p.style.color = "var(--glow-color)"; // Dùng màu dynamic
+      p.style.textShadow = "0 0 10px var(--glow-color)";
+
+      const startX = Math.random() * window.innerWidth;
       gsap.set(p, { x: startX, y: vh + 50, opacity: 0, scale: 0.5 });
 
       const swayX = 80 + Math.random() * 80;
@@ -404,7 +414,6 @@ export default function LeftSidebar() {
         return;
       }
       if (heartParticleIntervalId !== null) return;
-
       createHeartParticle();
       heartParticleIntervalId = window.setInterval(createHeartParticle, 300);
     }
@@ -459,7 +468,9 @@ export default function LeftSidebar() {
         onClick={() => setOpen((s) => !s)}
         aria-label="Toggle Love Meter"
       >
-        <span className="heart-icon">❤</span>
+        <div className="btn-inner-glow">
+          <span className="heart-icon">✦</span>
+        </div>
       </button>
 
       <aside
@@ -467,7 +478,7 @@ export default function LeftSidebar() {
         ref={rootRef}
         aria-hidden={!open}
       >
-        {/* SVG FILTER */}
+        {/* SVG FILTER CHO HIỆU ỨNG CHẤT LỎNG */}
         <svg style={{ position: "absolute", width: 0, height: 0 }}>
           <defs>
             <filter
@@ -478,48 +489,18 @@ export default function LeftSidebar() {
               height="140%"
             >
               <feTurbulence
-                type="turbulence"
-                baseFrequency="0.02"
-                numOctaves="10"
+                type="fractalNoise"
+                baseFrequency="0.03"
+                numOctaves="3"
                 result="noise1"
                 seed="1"
               />
-              <feOffset in="noise1" dx="0" dy="0" result="offsetNoise1">
-                <animate
-                  attributeName="dy"
-                  values="700; 0"
-                  dur="6s"
-                  repeatCount="indefinite"
-                  calcMode="linear"
-                />
-              </feOffset>
-              <feTurbulence
-                type="turbulence"
-                baseFrequency="0.02"
-                numOctaves="10"
-                result="noise2"
-                seed="1"
-              />
-              <feOffset in="noise2" dx="0" dy="0" result="offsetNoise2">
-                <animate
-                  attributeName="dy"
-                  values="0; -700"
-                  dur="6s"
-                  repeatCount="indefinite"
-                  calcMode="linear"
-                />
-              </feOffset>
-              <feComposite
-                in="offsetNoise1"
-                in2="offsetNoise2"
-                result="part1"
-              />
               <feDisplacementMap
                 in="SourceGraphic"
-                in2="part1"
-                scale="20"
+                in2="noise1"
+                scale="6"
                 xChannelSelector="R"
-                yChannelSelector="B"
+                yChannelSelector="G"
               />
             </filter>
           </defs>
@@ -528,18 +509,25 @@ export default function LeftSidebar() {
         <div id="app">
           <div className="thermostat-ui">
             <div className="sidebar-header">
-              <h3>Love Meter</h3>
+              <h3>Tình Yêu Kế</h3>
               <div className="divider"></div>
             </div>
 
             <div className="thermostat glass-panel">
               <div className="thermostat-inner">
                 <div className="scale-container" id="scaleContainer" />
+
+                {/* Ống chứa nhiệt độ */}
                 <div className="track" id="track">
-                  <div className="mercury" id="mercury" />
+                  <div className="mercury-container">
+                    <div className="mercury" id="mercury" />
+                    <div className="mercury-bubble-layer"></div>
+                  </div>
                 </div>
+
                 <div className="knob-zone">
                   <div className="knob" id="knob">
+                    <div className="knob-ring"></div>
                     <div className="knob-core"></div>
                   </div>
                 </div>
@@ -551,7 +539,7 @@ export default function LeftSidebar() {
                 70°
               </div>
               <div className="status-text" id="statusText">
-                Crush
+                Rung Động
               </div>
             </div>
           </div>
@@ -562,39 +550,45 @@ export default function LeftSidebar() {
         <style jsx>{`
           /* GLOBAL VARS */
           :global(:root) {
-            --glow-color: #00eaff;
-            --glass-bg: rgba(15, 20, 30, 0.65);
-            --glass-border: rgba(255, 255, 255, 0.1);
+            --glow-color: #ff0055;
+            --glass-bg: rgba(5, 5, 5, 0.85); /* Tối hơn cho Dark Mode */
+            --glass-border: rgba(212, 175, 55, 0.3); /* Viền vàng kim */
+            --gold-accent: #d4af37;
           }
 
           /* --- SIDEBAR CONTAINER --- */
           .mycrush-sidebar {
             position: fixed;
             left: 20px;
-            top: 150px; /* Đã hạ thấp */
+            top: 20%; /* Căn giữa dọc */
             height: auto;
-            min-height: 500px;
-            width: 160px;
-            padding: 24px 16px;
+            min-height: 550px;
+            width: 140px;
+            padding: 30px 10px;
             z-index: 2000;
+
+            /* Glassmorphism Dark Theme */
             background: var(--glass-bg);
             backdrop-filter: blur(20px);
             -webkit-backdrop-filter: blur(20px);
+
+            /* Border & Glow */
             border: 1px solid var(--glass-border);
-            border-radius: 24px;
-            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5),
-              inset 0 0 0 1px rgba(255, 255, 255, 0.05);
-            transform: translateX(-150%);
+            border-radius: 50px; /* Bo tròn như viên thuốc */
+            box-shadow: 0 0 30px rgba(0, 0, 0, 0.8),
+              inset 0 0 20px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(0, 0, 0, 1);
+
+            transform: translateX(-150%) scale(0.9);
             opacity: 0;
-            transition: transform 0.6s cubic-bezier(0.22, 1, 0.36, 1),
-              opacity 0.5s ease;
+            transition: all 0.6s cubic-bezier(0.22, 1, 0.36, 1);
             visibility: hidden;
+
             display: flex;
             flex-direction: column;
             align-items: center;
           }
           .mycrush-sidebar.open {
-            transform: translateX(0);
+            transform: translateX(0) scale(1);
             opacity: 1;
             visibility: visible;
           }
@@ -603,56 +597,72 @@ export default function LeftSidebar() {
           .sidebar-header {
             width: 100%;
             text-align: center;
-            margin-bottom: 20px;
+            margin-bottom: 25px;
           }
           .sidebar-header h3 {
             margin: 0;
             font-family: "Orbitron", sans-serif;
-            font-size: 12px;
-            letter-spacing: 2px;
-            color: rgba(255, 255, 255, 0.7);
+            font-size: 10px;
+            letter-spacing: 3px;
+            color: var(--gold-accent);
             text-transform: uppercase;
+            text-shadow: 0 0 5px var(--gold-accent);
           }
           .divider {
             height: 1px;
-            width: 40px;
-            background: rgba(255, 255, 255, 0.2);
+            width: 20px;
+            background: var(--gold-accent);
             margin: 8px auto 0;
+            box-shadow: 0 0 5px var(--gold-accent);
           }
 
           /* --- TOGGLE BUTTON --- */
           :global(.sidebar-love-btn) {
             position: fixed;
             left: 20px;
-            top: 80px; /* Đã hạ thấp */
+            top: 100px;
             z-index: 2001;
-            width: 48px;
-            height: 48px;
+            width: 50px;
+            height: 50px;
             border-radius: 50%;
-            background: rgba(20, 20, 25, 0.6);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            backdrop-filter: blur(10px);
+            background: #000;
+            border: 1px solid var(--gold-accent);
             cursor: pointer;
             display: flex;
             align-items: center;
             justify-content: center;
-            transition: all 0.3s ease;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
-            color: #ff3366;
+            transition: all 0.4s ease;
+            box-shadow: 0 0 15px rgba(212, 175, 55, 0.2);
+          }
+          .btn-inner-glow {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: radial-gradient(
+              circle,
+              rgba(212, 175, 55, 0.2) 0%,
+              transparent 70%
+            );
           }
           :global(.sidebar-love-btn:hover) {
-            transform: scale(1.1) rotate(10deg);
-            background: rgba(255, 255, 255, 0.1);
-            box-shadow: 0 0 20px rgba(255, 51, 102, 0.4);
+            transform: scale(1.1);
+            box-shadow: 0 0 25px rgba(212, 175, 55, 0.6);
           }
           :global(.sidebar-love-btn.active) {
-            background: #ff0044;
-            color: #fff;
-            border-color: #ff0044;
-            box-shadow: 0 0 25px rgba(255, 0, 68, 0.6);
+            background: var(--gold-accent);
+            color: #000;
+            box-shadow: 0 0 30px var(--gold-accent);
           }
           .heart-icon {
             font-size: 20px;
+            color: var(--gold-accent);
+            transition: color 0.3s;
+          }
+          :global(.sidebar-love-btn.active) .heart-icon {
+            color: #000;
           }
 
           /* --- THERMOSTAT STRUCTURE --- */
@@ -672,7 +682,7 @@ export default function LeftSidebar() {
           .thermostat {
             position: relative;
             width: 60px;
-            height: 320px;
+            height: 350px;
             margin-bottom: 20px;
           }
           .thermostat-inner {
@@ -681,23 +691,29 @@ export default function LeftSidebar() {
             height: 100%;
           }
 
-          /* --- TRACK --- */
+          /* --- TRACK (ỐNG NHIỆT) --- */
           .track {
             position: absolute;
             left: 50%;
             top: 0;
             bottom: 0;
             transform: translateX(-50%);
-            width: 12px;
-            background: rgba(0, 0, 0, 0.5);
+            width: 10px;
+            background: #111;
             border-radius: 999px;
-            box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.8),
-              0 0 0 1px rgba(255, 255, 255, 0.05);
-            overflow: hidden;
+            box-shadow: inset 0 0 10px #000;
+            border: 1px solid rgba(255, 255, 255, 0.1);
             z-index: 1;
+            overflow: hidden;
           }
 
-          /* --- MERCURY --- */
+          /* --- MERCURY (CHẤT LỎNG) --- */
+          .mercury-container {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            filter: url(#turbulent-displace); /* Hiệu ứng lỏng */
+          }
           .mercury {
             position: absolute;
             bottom: 0;
@@ -707,10 +723,22 @@ export default function LeftSidebar() {
             background: var(--glow-color);
             box-shadow: 0 0 20px var(--glow-color);
             transition: height 0.1s linear;
-            opacity: 0.9;
+            will-change: height; /* GPU Optimized */
+          }
+          /* Bọt khí trong ống */
+          .mercury-bubble-layer {
+            position: absolute;
+            inset: 0;
+            background-image: radial-gradient(
+              rgba(255, 255, 255, 0.8) 1px,
+              transparent 1px
+            );
+            background-size: 10px 10px;
+            opacity: 0.3;
+            mix-blend-mode: overlay;
           }
 
-          /* --- KNOB --- */
+          /* --- KNOB (NÚT KÉO) --- */
           .knob-zone {
             position: absolute;
             top: 0;
@@ -723,37 +751,54 @@ export default function LeftSidebar() {
           .knob {
             position: absolute;
             left: 50%;
-            width: 32px;
-            height: 32px;
-            margin-left: -16px;
+            width: 36px;
+            height: 36px;
+            margin-left: -18px;
             border-radius: 50%;
-            background: #fff;
+            background: #000;
+            border: 2px solid var(--glow-color);
             box-shadow: 0 0 20px var(--glow-color),
-              0 4px 10px rgba(0, 0, 0, 0.5);
+              inset 0 0 10px var(--glow-color);
             cursor: grab;
             pointer-events: auto;
             display: flex;
             align-items: center;
             justify-content: center;
+            will-change: transform; /* GPU Optimized */
           }
           .knob:active {
             cursor: grabbing;
             transform: scale(1.1);
           }
           .knob-core {
-            width: 10px;
-            height: 10px;
-            background: var(--glow-color);
+            width: 8px;
+            height: 8px;
+            background: #fff;
             border-radius: 50%;
+            box-shadow: 0 0 10px #fff;
+          }
+          .knob-ring {
+            position: absolute;
+            inset: -4px;
+            border: 1px dashed var(--glow-color);
+            border-radius: 50%;
+            opacity: 0.5;
+            animation: spin 10s linear infinite;
           }
 
-          /* --- SCALE --- */
+          @keyframes spin {
+            100% {
+              transform: rotate(360deg);
+            }
+          }
+
+          /* --- SCALE (THƯỚC ĐO) --- */
           .scale-container {
             position: absolute;
-            left: -35px;
+            left: -40px;
             top: 0;
             bottom: 0;
-            width: 30px;
+            width: 40px;
             pointer-events: none;
           }
           :global(.scale-mark) {
@@ -763,39 +808,45 @@ export default function LeftSidebar() {
             align-items: center;
             justify-content: flex-end;
             height: 0;
+            transition: all 0.3s;
+            will-change: transform, opacity;
           }
           :global(.tick) {
-            height: 2px;
-            background: rgba(255, 255, 255, 0.3);
-            border-radius: 2px;
+            height: 1px;
+            background: var(--glow-color);
             margin-left: 8px;
-            transition: width 0.3s;
+            box-shadow: 0 0 5px var(--glow-color);
           }
           :global(.tick-label) {
             font-family: "Share Tech Mono", monospace;
             font-size: 10px;
             color: rgba(255, 255, 255, 0.5);
+            margin-right: 4px;
           }
 
           /* --- READOUT --- */
           .temp-readout {
             text-align: center;
+            margin-top: 10px;
           }
           .temp-value {
             font-family: "Share Tech Mono", monospace;
-            font-size: 36px;
+            font-size: 42px;
             font-weight: 700;
             color: #fff;
             text-shadow: 0 0 15px var(--glow-color);
             margin-bottom: 4px;
+            transition: color 0.3s;
           }
           .status-text {
-            font-family: "Orbitron", sans-serif;
-            font-size: 12px;
-            text-transform: uppercase;
-            letter-spacing: 2px;
+            font-family: "Playfair Display", serif;
+            font-size: 14px;
+            font-style: italic;
+            letter-spacing: 1px;
             color: var(--glow-color);
-            opacity: 0.8;
+            opacity: 0.9;
+            text-shadow: 0 0 10px var(--glow-color);
+            transition: color 0.3s;
           }
 
           /* --- PARTICLES --- */
@@ -818,7 +869,7 @@ export default function LeftSidebar() {
             justify-content: center;
           }
 
-          /* Responsive */
+          /* RESPONSIVE MOBILE */
           @media (max-width: 768px) {
             .mycrush-sidebar {
               top: auto;
@@ -826,10 +877,12 @@ export default function LeftSidebar() {
               left: 50%;
               transform: translateX(-50%) translateY(120%);
               width: 90%;
-              max-width: 300px;
+              max-width: 320px;
               flex-direction: row;
-              height: 140px;
+              height: 100px;
               min-height: auto;
+              padding: 0 20px;
+              border-radius: 20px;
             }
             .mycrush-sidebar.open {
               transform: translateX(-50%) translateY(0);
@@ -842,14 +895,31 @@ export default function LeftSidebar() {
             }
             .scale-container {
               display: none;
+            } /* Ẩn thước đo trên mobile cho gọn */
+
+            .sidebar-header,
+            .divider {
+              display: none;
             }
+
             .temp-readout {
               margin-left: auto;
               text-align: right;
+              margin-top: 0;
+              display: flex;
+              flex-direction: column-reverse; /* Đảo ngược để số ở trên */
             }
+            .temp-value {
+              font-size: 24px;
+            }
+            .status-text {
+              font-size: 10px;
+            }
+
             :global(.sidebar-love-btn) {
               top: auto;
-              bottom: 180px;
+              bottom: 140px;
+              left: 20px;
             }
           }
         `}</style>

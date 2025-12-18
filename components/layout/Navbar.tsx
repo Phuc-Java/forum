@@ -225,7 +225,7 @@ export default function Navbar() {
           </Link>
 
           {/* Nav Links */}
-          <div className="hidden md:flex items-center gap-6">
+          <div className="hidden lg:flex items-center gap-6">
             <Link
               href="/"
               className={`font-mono text-sm transition-all duration-300 relative hover:scale-105 ${

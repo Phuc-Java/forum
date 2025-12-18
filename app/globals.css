@@ -1,5 +1,34 @@
 @import "tailwindcss";
 @layer utilities {
+  .text-glow-primary {
+    text-shadow: 0 0 15px rgba(0, 255, 159, 0.5);
+  }
+
+  .text-glow-secondary {
+    text-shadow: 0 0 15px rgba(189, 0, 255, 0.5);
+  }
+
+  .animate-gradient-x {
+    background-size: 200% 200%;
+    animation: gradient-x 15s ease infinite;
+  }
+
+  @keyframes gradient-x {
+    0%,
+    100% {
+      background-position: 0% 50%;
+    }
+    50% {
+      background-position: 100% 50%;
+    }
+  }
+
+  /* Tối ưu render bằng GPU cho các model và animation nặng */
+  .gpu-layer {
+    transform: translateZ(0);
+    will-change: transform, opacity;
+    backface-visibility: hidden;
+  }
   /* Ẩn scrollbar nhưng vẫn cuộn được */
   .no-scrollbar::-webkit-scrollbar {
     display: none;
