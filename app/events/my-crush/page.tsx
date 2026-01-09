@@ -57,9 +57,9 @@ export default function Page() {
 
           <div className="message-body">
             <p className="secret-text">
-              "Nếu vận tốc của hoa anh đào không phải là 5cm/s thì có lẽ nó đã
+              Nếu vận tốc của hoa anh đào không phải là 5cm/s thì có lẽ nó đã
               không đẹp đến thế. Và nếu khoảng cách giữa chúng ta không phải là
-              những con số này, có lẽ tôi đã không trân trọng em nhiều đến vậy."
+              những con số này, có lẽ tôi đã không trân trọng em nhiều đến vậy.
             </p>
             <div className="separator-line">
               <span className="flower-icon">🌸</span>

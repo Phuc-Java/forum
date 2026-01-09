@@ -77,6 +77,14 @@ export const metadata: Metadata = {
   title: "Xóm Nhà Lá",
   description:
     "Diễn đàn ẩn danh phong cách Cyberpunk - Kết nối, chia sẻ, bảo mật",
+  icons: {
+    icon: "/unnamed__4_-removebg-preview.png",
+    apple: "/apple-touch-icon.png",
+    other: [
+      { rel: "icon", url: "/favicon-32x32.png", sizes: "32x32" },
+      { rel: "icon", url: "/favicon-16x16.png", sizes: "16x16" },
+    ],
+  },
 };
 
 export default function RootLayout({
