@@ -1,13 +1,17 @@
 // app/music-sanctuary/page.tsx
 // Ultimate Music Sanctuary - Server-Side Rendered with Auto Music Detection
+// Protected area: Requires chi_cuong_gia (Chí Cường Giả) or higher
 
 import { Suspense } from "react";
 import { Metadata } from "next";
 import fs from "fs/promises";
 import path from "path";
 import MusicSanctuaryClient from "./_components/MusicSanctuary.client";
+import MusicAccessDenied from "./_components/MusicAccessDenied";
 import { MusicTrack } from "./types";
 import { ONLINE_TRACKS } from "./online-tracks";
+import { getServerUser, getServerProfile } from "@/lib/appwrite/server";
+import { ROLE_LEVELS, RoleType } from "@/lib/roles";
 import "./styles.css";
 
 // Metadata cho SEO
@@ -17,6 +21,10 @@ export const metadata: Metadata = {
     "Trải nghiệm nghe nhạc tuyệt vời với hình ảnh 3D phản ứng theo âm thanh",
   keywords: ["music", "visualizer", "audio", "sanctuary", "immersive"],
 };
+
+// Required role to access Music Sanctuary
+const REQUIRED_ROLE: RoleType = "chi_cuong_gia";
+const REQUIRED_LEVEL = ROLE_LEVELS[REQUIRED_ROLE];
 
 // Cover images preset
 const COVER_PRESETS = [
@@ -161,6 +169,37 @@ function LoadingScreen() {
 
 // Main page component (Server Component)
 export default async function MusicSanctuaryPage() {
+  // ========== ACCESS CONTROL (Server-side) ==========
+  const user = await getServerUser();
+
+  // Check if user is logged in
+  if (!user) {
+    return (
+      <MusicAccessDenied
+        userRole="no_le"
+        requiredRole={REQUIRED_ROLE}
+        username="Khách Vãng Lai"
+      />
+    );
+  }
+
+  // Get user profile to check role
+  const profile = await getServerProfile(user.$id);
+  const userRole = (profile?.role as RoleType) || "pham_nhan";
+  const userLevel = ROLE_LEVELS[userRole] || 1;
+
+  // Check if user has required role level
+  if (userLevel < REQUIRED_LEVEL) {
+    return (
+      <MusicAccessDenied
+        userRole={userRole}
+        requiredRole={REQUIRED_ROLE}
+        username={profile?.displayName || user.name || "Đạo Hữu"}
+      />
+    );
+  }
+
+  // ========== USER HAS ACCESS - LOAD MUSIC ==========
   // Fetch tracks on server
   const tracks = await getMusicTracks();
 

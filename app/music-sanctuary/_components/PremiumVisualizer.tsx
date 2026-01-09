@@ -1,11 +1,39 @@
 // app/music-sanctuary/_components/PremiumVisualizer.tsx
 // Stunning audio visualizer with multiple effects
+// GPU-accelerated with performance optimizations
 
 "use client";
 
-import React, { useRef, useEffect, memo, useMemo } from "react";
+import React, { useRef, useEffect, memo, useMemo, useCallback } from "react";
 import { motion } from "framer-motion";
 import { AudioAnalysis } from "../types";
+
+// Performance constants
+const TARGET_FPS = 60;
+const FRAME_TIME = 1000 / TARGET_FPS;
+const USE_OFFSCREEN_CANVAS = typeof OffscreenCanvas !== "undefined";
+
+// GPU acceleration styles
+const GPU_LAYER_STYLE: React.CSSProperties = {
+  transform: "translateZ(0)",
+  backfaceVisibility: "hidden",
+  willChange: "transform",
+  contain: "layout style paint",
+};
+
+// Throttle function for performance
+const throttleRAF = (callback: () => void) => {
+  let ticking = false;
+  return () => {
+    if (!ticking) {
+      ticking = true;
+      requestAnimationFrame(() => {
+        callback();
+        ticking = false;
+      });
+    }
+  };
+};
 
 interface PremiumVisualizerProps {
   audioData: AudioAnalysis;
@@ -31,7 +59,9 @@ const WaveVisualizer = memo(
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const animationRef = useRef<number>(0);
     const timeRef = useRef(0);
+    const lastFrameTimeRef = useRef(0);
     const dataRef = useRef({ audioData, isPlaying, accentColor });
+    const isVisibleRef = useRef(true);
 
     useEffect(() => {
       dataRef.current = { audioData, isPlaying, accentColor };
@@ -41,28 +71,64 @@ const WaveVisualizer = memo(
       const canvas = canvasRef.current;
       if (!canvas) return;
 
-      const ctx = canvas.getContext("2d");
+      // Visibility API - pause when tab is not visible
+      const handleVisibilityChange = () => {
+        isVisibleRef.current = !document.hidden;
+      };
+      document.addEventListener("visibilitychange", handleVisibilityChange);
+
+      const ctx = canvas.getContext("2d", {
+        alpha: true,
+        desynchronized: true,
+        willReadFrequently: false,
+      });
       if (!ctx) return;
 
+      // Pre-computed wave configs (avoid recreating every frame)
+      const waveConfigs = [
+        { frequency: 0.005, speed: 0.35, baseColor: accentColor, yOffset: 0 },
+        { frequency: 0.007, speed: 0.45, baseColor: "#06b6d4", yOffset: 25 },
+        { frequency: 0.01, speed: 0.6, baseColor: "#8b5cf6", yOffset: -25 },
+      ];
+
+      let width = 0;
+      let height = 0;
+      let centerY = 0;
+
       const resize = () => {
-        canvas.width = canvas.offsetWidth * window.devicePixelRatio;
-        canvas.height = canvas.offsetHeight * window.devicePixelRatio;
-        ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+        const dpr = Math.min(window.devicePixelRatio, 1.5); // Lower DPR for performance
+        width = canvas.offsetWidth;
+        height = canvas.offsetHeight;
+        centerY = height / 2;
+        canvas.width = width * dpr;
+        canvas.height = height * dpr;
+        ctx.scale(dpr, dpr);
       };
 
       resize();
-      window.addEventListener("resize", resize);
+      const throttledResize = throttleRAF(resize);
+      window.addEventListener("resize", throttledResize);
 
-      const draw = () => {
-        const width = canvas.offsetWidth;
-        const height = canvas.offsetHeight;
-        const centerY = height / 2;
+      const draw = (timestamp: number) => {
+        // Skip frame if not visible or throttled
+        if (!isVisibleRef.current) {
+          animationRef.current = requestAnimationFrame(draw);
+          return;
+        }
+
+        // Frame rate limiting
+        const elapsed = timestamp - lastFrameTimeRef.current;
+        if (elapsed < FRAME_TIME) {
+          animationRef.current = requestAnimationFrame(draw);
+          return;
+        }
+        lastFrameTimeRef.current = timestamp - (elapsed % FRAME_TIME);
 
         // Fade effect
         ctx.fillStyle = "rgba(5, 5, 15, 0.08)";
         ctx.fillRect(0, 0, width, height);
 
-        timeRef.current += 0.015;
+        timeRef.current += 0.012;
         const time = timeRef.current;
         const {
           audioData: data,
@@ -70,61 +136,37 @@ const WaveVisualizer = memo(
           accentColor: color,
         } = dataRef.current;
 
-        // Audio reactivity
         const bass = playing ? data.bass : 0.1;
         const mid = playing ? data.mid : 0.1;
         const treble = playing ? data.treble : 0.1;
         const energy = playing ? data.energy : 0.1;
 
-        // Create multiple wave layers
-        const waves = [
-          {
-            amplitude: 40 + bass * 80,
-            frequency: 0.006,
-            speed: 0.4,
-            color: color,
-            alpha: 0.25 + energy * 0.2,
-            yOffset: 0,
-          },
-          {
-            amplitude: 30 + mid * 60,
-            frequency: 0.008,
-            speed: 0.5,
-            color: "#06b6d4",
-            alpha: 0.2 + mid * 0.15,
-            yOffset: 20,
-          },
-          {
-            amplitude: 20 + treble * 40,
-            frequency: 0.012,
-            speed: 0.7,
-            color: "#8b5cf6",
-            alpha: 0.15 + treble * 0.1,
-            yOffset: -20,
-          },
-          {
-            amplitude: 15 + bass * 30,
-            frequency: 0.015,
-            speed: 0.9,
-            color: "#ec4899",
-            alpha: 0.1 + bass * 0.08,
-            yOffset: 30,
-          },
+        // Reduced to 3 waves for performance
+        const amplitudes = [50 + bass * 80, 40 + mid * 60, 30 + treble * 50];
+        const alphas = [
+          0.3 + energy * 0.2,
+          0.25 + mid * 0.15,
+          0.2 + treble * 0.1,
         ];
 
-        waves.forEach((wave, waveIndex) => {
+        // Use larger step for wave sampling (4px instead of 2px)
+        const step = 4;
+
+        waveConfigs.forEach((wave, waveIndex) => {
+          const amplitude = amplitudes[waveIndex];
+          const alpha = alphas[waveIndex];
+          const currentColor = waveIndex === 0 ? color : wave.baseColor;
+
           ctx.beginPath();
 
-          for (let x = 0; x <= width; x += 3) {
+          for (let x = 0; x <= width; x += step) {
             const y =
               centerY +
               wave.yOffset +
               Math.sin(x * wave.frequency + time * wave.speed + waveIndex) *
-                wave.amplitude +
+                amplitude +
               Math.sin(x * wave.frequency * 2 + time * wave.speed * 1.5) *
-                (wave.amplitude * 0.3) +
-              Math.sin(x * wave.frequency * 0.5 + time * wave.speed * 0.7) *
-                (wave.amplitude * 0.2);
+                (amplitude * 0.3);
 
             if (x === 0) {
               ctx.moveTo(x, y);
@@ -137,48 +179,28 @@ const WaveVisualizer = memo(
           ctx.lineTo(0, height);
           ctx.closePath();
 
+          const alphaHex = Math.round(alpha * 255)
+            .toString(16)
+            .padStart(2, "0");
+          const alphaHalfHex = Math.round(alpha * 0.5 * 255)
+            .toString(16)
+            .padStart(2, "0");
+
           const gradient = ctx.createLinearGradient(
             0,
-            centerY - wave.amplitude,
+            centerY - amplitude,
             0,
             height
           );
-          gradient.addColorStop(
-            0,
-            `${wave.color}${Math.round(wave.alpha * 255)
-              .toString(16)
-              .padStart(2, "0")}`
-          );
-          gradient.addColorStop(
-            0.5,
-            `${wave.color}${Math.round(wave.alpha * 0.5 * 255)
-              .toString(16)
-              .padStart(2, "0")}`
-          );
+          gradient.addColorStop(0, `${currentColor}${alphaHex}`);
+          gradient.addColorStop(0.5, `${currentColor}${alphaHalfHex}`);
           gradient.addColorStop(1, "transparent");
 
           ctx.fillStyle = gradient;
           ctx.fill();
 
-          // Add glow line at top of wave
-          ctx.beginPath();
-          for (let x = 0; x <= width; x += 3) {
-            const y =
-              centerY +
-              wave.yOffset +
-              Math.sin(x * wave.frequency + time * wave.speed + waveIndex) *
-                wave.amplitude +
-              Math.sin(x * wave.frequency * 2 + time * wave.speed * 1.5) *
-                (wave.amplitude * 0.3);
-
-            if (x === 0) {
-              ctx.moveTo(x, y);
-            } else {
-              ctx.lineTo(x, y);
-            }
-          }
-
-          ctx.strokeStyle = `${wave.color}${Math.round(wave.alpha * 2 * 255)
+          // Simplified stroke
+          ctx.strokeStyle = `${currentColor}${Math.round(alpha * 2 * 255)
             .toString(16)
             .padStart(2, "0")}`;
           ctx.lineWidth = 2;
@@ -188,16 +210,24 @@ const WaveVisualizer = memo(
         animationRef.current = requestAnimationFrame(draw);
       };
 
-      draw();
+      animationRef.current = requestAnimationFrame(draw);
 
       return () => {
-        window.removeEventListener("resize", resize);
+        window.removeEventListener("resize", throttledResize);
+        document.removeEventListener(
+          "visibilitychange",
+          handleVisibilityChange
+        );
         cancelAnimationFrame(animationRef.current);
       };
-    }, []);
+    }, [accentColor]);
 
     return (
-      <canvas ref={canvasRef} className="absolute inset-0 w-full h-full" />
+      <canvas
+        ref={canvasRef}
+        className="absolute inset-0 w-full h-full"
+        style={{ ...GPU_LAYER_STYLE, zIndex: 2 }}
+      />
     );
   }
 );
@@ -205,8 +235,19 @@ const WaveVisualizer = memo(
 WaveVisualizer.displayName = "WaveVisualizer";
 
 // ============================================================================
-// PARTICLE FIELD
+// PARTICLE FIELD - Object pooling for performance
 // ============================================================================
+
+interface Particle {
+  x: number;
+  y: number;
+  vx: number;
+  vy: number;
+  size: number;
+  hue: number;
+  life: number;
+  active: boolean;
+}
 
 const ParticleField = memo(
   ({
@@ -218,18 +259,13 @@ const ParticleField = memo(
   }) => {
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const animationRef = useRef<number>(0);
-    const particlesRef = useRef<
-      Array<{
-        x: number;
-        y: number;
-        vx: number;
-        vy: number;
-        size: number;
-        hue: number;
-        life: number;
-      }>
-    >([]);
+    const lastFrameTimeRef = useRef(0);
+    const isVisibleRef = useRef(true);
     const dataRef = useRef({ audioData, isPlaying });
+
+    // Object pool for particles (pre-allocated)
+    const particlePoolRef = useRef<Particle[]>([]);
+    const activeCountRef = useRef(0);
 
     useEffect(() => {
       dataRef.current = { audioData, isPlaying };
@@ -239,63 +275,126 @@ const ParticleField = memo(
       const canvas = canvasRef.current;
       if (!canvas) return;
 
-      const ctx = canvas.getContext("2d");
+      const handleVisibilityChange = () => {
+        isVisibleRef.current = !document.hidden;
+      };
+      document.addEventListener("visibilitychange", handleVisibilityChange);
+
+      const ctx = canvas.getContext("2d", {
+        alpha: true,
+        desynchronized: true,
+        willReadFrequently: false,
+      });
       if (!ctx) return;
 
+      let width = 0;
+      let height = 0;
+
       const resize = () => {
-        canvas.width = canvas.offsetWidth * window.devicePixelRatio;
-        canvas.height = canvas.offsetHeight * window.devicePixelRatio;
-        ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+        const dpr = Math.min(window.devicePixelRatio, 1.5);
+        width = canvas.offsetWidth;
+        height = canvas.offsetHeight;
+        canvas.width = width * dpr;
+        canvas.height = height * dpr;
+        ctx.scale(dpr, dpr);
       };
 
       resize();
-      window.addEventListener("resize", resize);
+      const throttledResize = throttleRAF(resize);
+      window.addEventListener("resize", throttledResize);
 
-      // Initialize particles - reduced count for performance
-      const particles = particlesRef.current;
-      const maxParticles = 60; // Reduced from 100
+      // Pre-allocate particle pool (reduced count)
+      const maxParticles = 80;
+      const pool = particlePoolRef.current;
+      for (let i = pool.length; i < maxParticles; i++) {
+        pool.push({
+          x: 0,
+          y: 0,
+          vx: 0,
+          vy: 0,
+          size: 0,
+          hue: 0,
+          life: 0,
+          active: false,
+        });
+      }
 
-      const draw = () => {
-        const width = canvas.offsetWidth;
-        const height = canvas.offsetHeight;
+      const getParticle = (): Particle | null => {
+        for (const p of pool) {
+          if (!p.active) {
+            p.active = true;
+            activeCountRef.current++;
+            return p;
+          }
+        }
+        return null;
+      };
+
+      const returnParticle = (p: Particle) => {
+        p.active = false;
+        activeCountRef.current--;
+      };
+
+      const draw = (timestamp: number) => {
+        if (!isVisibleRef.current) {
+          animationRef.current = requestAnimationFrame(draw);
+          return;
+        }
+
+        const elapsed = timestamp - lastFrameTimeRef.current;
+        if (elapsed < FRAME_TIME) {
+          animationRef.current = requestAnimationFrame(draw);
+          return;
+        }
+        lastFrameTimeRef.current = timestamp - (elapsed % FRAME_TIME);
+
         const { audioData: data, isPlaying: playing } = dataRef.current;
 
-        // Clear
-        ctx.clearRect(0, 0, width, height);
+        ctx.fillStyle = "rgba(5, 5, 15, 0.18)";
+        ctx.fillRect(0, 0, width, height);
 
-        // Add new particles based on audio
-        if (playing && data.energy > 0.3 && particles.length < maxParticles) {
-          const count = Math.floor(data.energy * 5);
+        // Spawn particles from pool
+        if (
+          playing &&
+          data.energy > 0.25 &&
+          activeCountRef.current < maxParticles - 10
+        ) {
+          const count = Math.min(3, Math.floor(data.energy * 4));
           for (let i = 0; i < count; i++) {
-            particles.push({
-              x: Math.random() * width,
-              y: height + 10,
-              vx: (Math.random() - 0.5) * 2,
-              vy: -2 - Math.random() * 4 * data.energy,
-              size: 2 + Math.random() * 4,
-              hue: 160 + Math.random() * 60, // Cyan to green
-              life: 1,
-            });
+            const p = getParticle();
+            if (p) {
+              const spawnX = Math.random() * width;
+              p.x = spawnX;
+              p.y = height + 10;
+              p.vx = (Math.random() - 0.5) * 2;
+              p.vy = -2.5 - Math.random() * 4 * data.energy;
+              p.size = 2 + Math.random() * 4 * data.bass;
+              p.hue = 140 + Math.random() * 60;
+              p.life = 1;
+            }
           }
         }
 
-        // Update and draw particles
-        for (let i = particles.length - 1; i >= 0; i--) {
-          const p = particles[i];
+        // Batch render particles
+        for (const p of pool) {
+          if (!p.active) continue;
 
-          // Update
           p.x += p.vx;
           p.y += p.vy;
-          p.vy += 0.02; // Slight gravity
-          p.life -= 0.01;
+          p.vy += 0.02;
+          p.vx *= 0.99;
+          p.life -= 0.012;
 
-          // Remove dead particles
-          if (p.life <= 0 || p.y < -10) {
-            particles.splice(i, 1);
+          if (playing && data.energy > 0.3) {
+            p.vy -= data.bass * 0.15;
+          }
+
+          if (p.life <= 0 || p.y < -20 || p.x < -20 || p.x > width + 20) {
+            returnParticle(p);
             continue;
           }
 
-          // Draw
+          // Simplified glow render
           const gradient = ctx.createRadialGradient(
             p.x,
             p.y,
@@ -304,11 +403,11 @@ const ParticleField = memo(
             p.y,
             p.size * 2
           );
-          gradient.addColorStop(0, `hsla(${p.hue}, 80%, 60%, ${p.life})`);
+          gradient.addColorStop(0, `hsla(${p.hue}, 85%, 60%, ${p.life})`);
           gradient.addColorStop(1, "transparent");
 
           ctx.beginPath();
-          ctx.arc(p.x, p.y, p.size * 2, 0, Math.PI * 2);
+          ctx.arc(p.x, p.y, p.size * 2.5, 0, Math.PI * 2);
           ctx.fillStyle = gradient;
           ctx.fill();
         }
@@ -316,10 +415,14 @@ const ParticleField = memo(
         animationRef.current = requestAnimationFrame(draw);
       };
 
-      draw();
+      animationRef.current = requestAnimationFrame(draw);
 
       return () => {
-        window.removeEventListener("resize", resize);
+        window.removeEventListener("resize", throttledResize);
+        document.removeEventListener(
+          "visibilitychange",
+          handleVisibilityChange
+        );
         cancelAnimationFrame(animationRef.current);
       };
     }, []);
@@ -328,6 +431,7 @@ const ParticleField = memo(
       <canvas
         ref={canvasRef}
         className="absolute inset-0 w-full h-full pointer-events-none"
+        style={{ ...GPU_LAYER_STYLE, zIndex: 5 }}
       />
     );
   }
@@ -336,7 +440,7 @@ const ParticleField = memo(
 ParticleField.displayName = "ParticleField";
 
 // ============================================================================
-// CIRCULAR SPECTRUM
+// CIRCULAR SPECTRUM - CSS-only GPU animation
 // ============================================================================
 
 const CircularSpectrum = memo(
@@ -349,81 +453,93 @@ const CircularSpectrum = memo(
     isPlaying: boolean;
     albumArt?: string;
   }) => {
-    const bars = 48;
-    const radius = 120; // Slightly smaller for better fit
+    const bars = 64; // Increased for denser, fuller spectrum
+    const radius = 180; // Increased from 120 for larger display
+    const padding = 80; // Space for bars to extend
+
+    // Memoize bar elements to prevent re-renders
+    const barElements = useMemo(() => {
+      return Array.from({ length: bars }).map((_, i) => {
+        const angle = (i / bars) * Math.PI * 2 - Math.PI / 2;
+        const freqIndex = i / bars;
+        const x = Math.cos(angle) * radius + radius + padding;
+        const y = Math.sin(angle) * radius + radius + padding;
+        const rotation = (angle * 180) / Math.PI + 90;
+        const hue = 150 + freqIndex * 80;
+
+        return { i, x, y, rotation, hue, freqIndex };
+      });
+    }, [bars, radius, padding]);
+
+    // Calculate intensities
+    const getIntensity = useCallback(
+      (freqIndex: number) => {
+        if (!isPlaying) return 0.1;
+        if (freqIndex < 0.25) return audioData.bass * 1.1;
+        if (freqIndex < 0.5) return audioData.bass * 0.4 + audioData.mid * 0.6;
+        if (freqIndex < 0.75)
+          return audioData.mid * 0.7 + audioData.treble * 0.3;
+        return audioData.treble;
+      },
+      [audioData, isPlaying]
+    );
 
     return (
-      // Positioned in the right area (accounting for sidebar)
       <div
         className="absolute pointer-events-none"
         style={{
           top: "45%",
-          left: "calc(50% + 100px)", // Offset for playlist sidebar
+          left: "calc(50% + 100px)",
           transform: "translate(-50%, -50%)",
-          willChange: "transform",
+          zIndex: 10,
         }}
       >
-        {/* Album art glow background */}
+        {/* Album art glow - simplified */}
         {albumArt && (
           <div
-            className="absolute rounded-full overflow-hidden opacity-25 blur-3xl"
+            className="absolute rounded-full overflow-hidden opacity-20 blur-2xl"
             style={{
-              width: radius * 3,
-              height: radius * 3,
+              width: radius * 3.5,
+              height: radius * 3.5,
               left: "50%",
               top: "50%",
-              transform: "translate(-50%, -50%)",
+              transform: "translate(-50%, -50%) translateZ(0)",
             }}
           >
-            <img src={albumArt} alt="" className="w-full h-full object-cover" />
+            <img
+              src={albumArt}
+              alt=""
+              className="w-full h-full object-cover"
+              loading="lazy"
+            />
           </div>
         )}
 
-        {/* Circular bars container */}
+        {/* Circular bars - GPU accelerated */}
         <div
           className="relative"
           style={{
-            width: radius * 2 + 80,
-            height: radius * 2 + 80,
-            willChange: "transform",
+            width: radius * 2 + padding * 2,
+            height: radius * 2 + padding * 2,
           }}
         >
-          {Array.from({ length: bars }).map((_, i) => {
-            const angle = (i / bars) * Math.PI * 2 - Math.PI / 2;
-            const freqIndex = i / bars;
-
-            let intensity = 0.1;
-            if (isPlaying) {
-              if (freqIndex < 0.33) {
-                intensity = audioData.bass;
-              } else if (freqIndex < 0.66) {
-                intensity = audioData.mid;
-              } else {
-                intensity = audioData.treble;
-              }
-            }
-
-            const barHeight = 18 + intensity * 50;
-            const x = Math.cos(angle) * radius + radius + 40;
-            const y = Math.sin(angle) * radius + radius + 40;
-            const rotation = (angle * 180) / Math.PI + 90;
-
-            // Color based on frequency
-            const hue = 160 + freqIndex * 60;
+          {barElements.map(({ i, x, y, rotation, hue, freqIndex }) => {
+            const intensity = getIntensity(freqIndex);
+            const barHeight = 25 + intensity * 75; // Increased bar heights
 
             return (
               <div
                 key={i}
-                className="absolute origin-bottom rounded-full gpu-accelerated"
+                className="absolute origin-bottom rounded-full"
                 style={{
                   left: x,
                   top: y,
-                  width: 3,
+                  width: 4, // Slightly wider bars
                   height: barHeight,
-                  transform: `translate(-50%, -100%) rotate(${rotation}deg)`,
-                  background: `linear-gradient(to top, hsla(${hue}, 80%, 50%, 0.8), hsla(${hue}, 80%, 70%, 0.4))`,
+                  transform: `translate(-50%, -100%) rotate(${rotation}deg) translateZ(0)`,
+                  background: `linear-gradient(to top, hsla(${hue}, 80%, 50%, 0.85), hsla(${hue}, 85%, 70%, 0.4))`,
                   boxShadow: isPlaying
-                    ? `0 0 8px hsla(${hue}, 80%, 50%, 0.4)`
+                    ? `0 0 10px hsla(${hue}, 80%, 50%, 0.5)`
                     : "none",
                   transition: "height 0.1s ease-out",
                 }}
@@ -431,177 +547,133 @@ const CircularSpectrum = memo(
             );
           })}
 
-          {/* Outer glow ring */}
+          {/* Center vinyl disc - CSS animation instead of Framer Motion */}
           <div
-            className="absolute rounded-full"
+            className="absolute rounded-full overflow-hidden"
             style={{
-              width: radius * 1.5,
-              height: radius * 1.5,
+              width: radius * 1.1,
+              height: radius * 1.1,
               left: "50%",
               top: "50%",
-              marginLeft: -(radius * 1.5) / 2,
-              marginTop: -(radius * 1.5) / 2,
-              background: isPlaying
-                ? "radial-gradient(circle, rgba(16, 185, 129, 0.15) 0%, transparent 70%)"
-                : "transparent",
-              transition: "background 0.5s ease",
-              pointerEvents: "none",
-            }}
-          />
-
-          {/* Center vinyl disc - rotates */}
-          <motion.div
-            className="absolute rounded-full overflow-hidden gpu-accelerated"
-            style={{
-              width: radius * 1.35,
-              height: radius * 1.35,
-              left: "50%",
-              top: "50%",
-              marginLeft: -(radius * 1.35) / 2,
-              marginTop: -(radius * 1.35) / 2,
+              marginLeft: -(radius * 1.1) / 2,
+              marginTop: -(radius * 1.1) / 2,
               background:
                 "conic-gradient(from 0deg, #1a1a1a 0deg, #2d2d2d 30deg, #1a1a1a 60deg, #252525 90deg, #1a1a1a 120deg, #2a2a2a 150deg, #1a1a1a 180deg, #282828 210deg, #1a1a1a 240deg, #2c2c2c 270deg, #1a1a1a 300deg, #262626 330deg, #1a1a1a 360deg)",
               boxShadow: isPlaying
-                ? "0 0 80px rgba(16, 185, 129, 0.3), 0 0 40px rgba(0,0,0,0.8), inset 0 0 40px rgba(0,0,0,0.5)"
-                : "0 0 60px rgba(0,0,0,0.8), inset 0 0 40px rgba(0,0,0,0.5)",
-              border: "2px solid rgba(255,255,255,0.08)",
+                ? "0 0 60px rgba(16, 185, 129, 0.25), 0 0 30px rgba(0,0,0,0.7)"
+                : "0 0 40px rgba(0,0,0,0.7)",
+              border: "2px solid rgba(255,255,255,0.06)",
+              animation: isPlaying ? "spin 6s linear infinite" : "none",
+              transform: "translateZ(0)",
+              willChange: isPlaying ? "transform" : "auto",
             }}
-            animate={{ rotate: isPlaying ? 360 : 0 }}
-            transition={{ duration: 6, repeat: Infinity, ease: "linear" }}
           >
-            {/* Vinyl grooves - more realistic */}
+            {/* Simplified vinyl grooves */}
             <div className="absolute inset-0 rounded-full">
-              {[...Array(12)].map((_, i) => (
+              {[0, 3, 6, 9].map((i) => (
                 <div
                   key={i}
                   className="absolute rounded-full"
                   style={{
-                    inset: 8 + i * 6,
-                    border:
-                      i % 3 === 0
-                        ? "1px solid rgba(255,255,255,0.08)"
-                        : "1px solid rgba(255,255,255,0.03)",
+                    inset: 8 + i * 8,
+                    border: "1px solid rgba(255,255,255,0.05)",
                   }}
                 />
               ))}
             </div>
 
-            {/* Vinyl shine/reflection effect */}
-            <div
-              className="absolute inset-0 rounded-full pointer-events-none"
-              style={{
-                background:
-                  "linear-gradient(135deg, rgba(255,255,255,0.1) 0%, transparent 40%, transparent 60%, rgba(255,255,255,0.05) 100%)",
-              }}
-            />
-
-            {/* Album art - counter-rotate to stay still */}
+            {/* Album art */}
             {albumArt ? (
-              <motion.div
+              <div
                 className="absolute rounded-full overflow-hidden"
                 style={{
                   inset: "20%",
-                  boxShadow:
-                    "0 0 30px rgba(0,0,0,0.8), inset 0 0 20px rgba(0,0,0,0.3)",
+                  boxShadow: "0 0 25px rgba(0,0,0,0.7)",
                   border: "3px solid rgba(255,255,255,0.1)",
+                  animation: isPlaying
+                    ? "spin-reverse 6s linear infinite"
+                    : "none",
+                  transform: "translateZ(0)",
                 }}
-                animate={{ rotate: isPlaying ? -360 : 0 }}
-                transition={{ duration: 6, repeat: Infinity, ease: "linear" }}
               >
                 <img
                   src={albumArt}
                   alt=""
                   className="w-full h-full object-cover"
+                  loading="lazy"
                 />
-                {/* Album art overlay for depth */}
-                <div
-                  className="absolute inset-0 rounded-full"
-                  style={{
-                    background:
-                      "radial-gradient(circle at 30% 30%, rgba(255,255,255,0.15) 0%, transparent 50%)",
-                  }}
-                />
-              </motion.div>
+              </div>
             ) : (
-              <motion.div
+              <div
                 className="absolute rounded-full flex items-center justify-center"
                 style={{
                   inset: "25%",
                   background:
                     "linear-gradient(135deg, #10b981 0%, #06b6d4 50%, #8b5cf6 100%)",
-                  boxShadow:
-                    "0 0 30px rgba(16, 185, 129, 0.4), inset 0 0 20px rgba(0,0,0,0.3)",
+                  boxShadow: "0 0 25px rgba(16, 185, 129, 0.4)",
                   border: "3px solid rgba(255,255,255,0.2)",
+                  animation: isPlaying
+                    ? "spin-reverse 6s linear infinite"
+                    : "none",
                 }}
-                animate={{ rotate: isPlaying ? -360 : 0 }}
-                transition={{ duration: 6, repeat: Infinity, ease: "linear" }}
               >
                 <svg
-                  className="w-10 h-10 text-white drop-shadow-lg"
+                  className="w-12 h-12 text-white"
                   viewBox="0 0 24 24"
                   fill="currentColor"
                 >
                   <path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z" />
                 </svg>
-              </motion.div>
+              </div>
             )}
 
-            {/* Center spindle/hole with metallic effect */}
+            {/* Center spindle */}
             <div
               className="absolute rounded-full"
               style={{
-                width: 28,
-                height: 28,
+                width: 32,
+                height: 32,
                 left: "50%",
                 top: "50%",
                 transform: "translate(-50%, -50%)",
                 background:
-                  "radial-gradient(circle at 40% 40%, #4a4a4a 0%, #1a1a1a 50%, #0a0a0a 100%)",
-                boxShadow:
-                  "inset 0 2px 4px rgba(255,255,255,0.1), inset 0 -2px 4px rgba(0,0,0,0.5)",
+                  "radial-gradient(circle at 40% 40%, #3a3a3a 0%, #1a1a1a 60%)",
                 border: "2px solid #333",
               }}
             >
-              {/* Inner hole */}
               <div
                 className="absolute rounded-full bg-black"
                 style={{
-                  width: 10,
-                  height: 10,
+                  width: 12,
+                  height: 12,
                   left: "50%",
                   top: "50%",
                   transform: "translate(-50%, -50%)",
-                  boxShadow: "inset 0 1px 3px rgba(255,255,255,0.1)",
                 }}
               />
             </div>
-          </motion.div>
-
-          {/* Pulsing ring effect when playing */}
-          {isPlaying && (
-            <motion.div
-              className="absolute rounded-full pointer-events-none"
-              style={{
-                width: radius * 1.6,
-                height: radius * 1.6,
-                left: "50%",
-                top: "50%",
-                marginLeft: -(radius * 1.6) / 2,
-                marginTop: -(radius * 1.6) / 2,
-                border: "1px solid rgba(16, 185, 129, 0.3)",
-              }}
-              animate={{
-                scale: [1, 1.1, 1],
-                opacity: [0.5, 0.2, 0.5],
-              }}
-              transition={{
-                duration: 2,
-                repeat: Infinity,
-                ease: "easeInOut",
-              }}
-            />
-          )}
+          </div>
         </div>
+
+        {/* CSS Keyframes injected via style tag */}
+        <style jsx>{`
+          @keyframes spin {
+            from {
+              transform: translateZ(0) rotate(0deg);
+            }
+            to {
+              transform: translateZ(0) rotate(360deg);
+            }
+          }
+          @keyframes spin-reverse {
+            from {
+              transform: translateZ(0) rotate(0deg);
+            }
+            to {
+              transform: translateZ(0) rotate(-360deg);
+            }
+          }
+        `}</style>
       </div>
     );
   }
@@ -610,7 +682,7 @@ const CircularSpectrum = memo(
 CircularSpectrum.displayName = "CircularSpectrum";
 
 // ============================================================================
-// FLOATING ORBS
+// FLOATING ORBS - Simplified CSS-only animation
 // ============================================================================
 
 const FloatingOrbs = memo(
@@ -621,45 +693,89 @@ const FloatingOrbs = memo(
     audioData: AudioAnalysis;
     isPlaying: boolean;
   }) => {
+    // Reduced orb count for performance
     const orbs = useMemo(
       () => [
         { x: 15, y: 25, size: 200, color: "#10b981", delay: 0 },
-        { x: 80, y: 20, size: 150, color: "#06b6d4", delay: 1 },
+        { x: 80, y: 20, size: 160, color: "#06b6d4", delay: 1 },
         { x: 10, y: 70, size: 180, color: "#8b5cf6", delay: 2 },
-        { x: 85, y: 75, size: 160, color: "#ec4899", delay: 0.5 },
+        { x: 85, y: 75, size: 150, color: "#ec4899", delay: 0.5 },
         { x: 50, y: 80, size: 140, color: "#f59e0b", delay: 1.5 },
       ],
       []
     );
 
-    const energy = isPlaying ? audioData.energy : 0.2;
+    const energy = isPlaying ? audioData.energy : 0.15;
 
     return (
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+      <div
+        className="absolute inset-0 pointer-events-none"
+        style={{ zIndex: 1 }}
+      >
         {orbs.map((orb, i) => (
-          <motion.div
+          <div
             key={i}
-            className="absolute rounded-full blur-3xl"
+            className="absolute rounded-full blur-2xl"
             style={{
               left: `${orb.x}%`,
               top: `${orb.y}%`,
               width: orb.size * (1 + energy * 0.3),
               height: orb.size * (1 + energy * 0.3),
-              background: `radial-gradient(circle, ${orb.color}20 0%, transparent 70%)`,
-            }}
-            animate={{
-              x: [0, 30, -20, 0],
-              y: [0, -20, 30, 0],
-              scale: [1, 1.1 + energy * 0.2, 0.95, 1],
-            }}
-            transition={{
-              duration: 10 + i * 2,
-              delay: orb.delay,
-              repeat: Infinity,
-              ease: "easeInOut",
+              background: `radial-gradient(circle, ${orb.color}20 0%, ${orb.color}08 40%, transparent 65%)`,
+              animation: `floatOrb${i} ${12 + i * 2}s ease-in-out infinite`,
+              animationDelay: `${orb.delay}s`,
+              transform: "translateZ(0)",
+              contain: "layout style paint",
             }}
           />
         ))}
+        <style jsx>{`
+          @keyframes floatOrb0 {
+            0%,
+            100% {
+              transform: translateZ(0) translate(0, 0);
+            }
+            50% {
+              transform: translateZ(0) translate(30px, -25px);
+            }
+          }
+          @keyframes floatOrb1 {
+            0%,
+            100% {
+              transform: translateZ(0) translate(0, 0);
+            }
+            50% {
+              transform: translateZ(0) translate(-25px, 30px);
+            }
+          }
+          @keyframes floatOrb2 {
+            0%,
+            100% {
+              transform: translateZ(0) translate(0, 0);
+            }
+            50% {
+              transform: translateZ(0) translate(20px, 35px);
+            }
+          }
+          @keyframes floatOrb3 {
+            0%,
+            100% {
+              transform: translateZ(0) translate(0, 0);
+            }
+            50% {
+              transform: translateZ(0) translate(-30px, -20px);
+            }
+          }
+          @keyframes floatOrb4 {
+            0%,
+            100% {
+              transform: translateZ(0) translate(0, 0);
+            }
+            50% {
+              transform: translateZ(0) translate(15px, -30px);
+            }
+          }
+        `}</style>
       </div>
     );
   }
@@ -668,7 +784,7 @@ const FloatingOrbs = memo(
 FloatingOrbs.displayName = "FloatingOrbs";
 
 // ============================================================================
-// MAIN PREMIUM VISUALIZER
+// MAIN PREMIUM VISUALIZER - GPU Optimized
 // ============================================================================
 
 const PremiumVisualizer = memo(
@@ -679,41 +795,50 @@ const PremiumVisualizer = memo(
     accentColor = "#10b981",
   }: PremiumVisualizerProps) => {
     return (
-      <div className="absolute inset-0 z-0 overflow-hidden bg-[#05050f]">
-        {/* Floating orbs background */}
+      <div
+        className="absolute inset-0 z-0 bg-[#05050f]"
+        style={{
+          isolation: "isolate",
+        }}
+      >
+        {/* Floating orbs background - CSS animation */}
         <FloatingOrbs audioData={audioData} isPlaying={isPlaying} />
 
-        {/* Wave visualizer */}
+        {/* Wave visualizer - Canvas with GPU hints */}
         <WaveVisualizer
           audioData={audioData}
           isPlaying={isPlaying}
           accentColor={accentColor}
         />
 
-        {/* Particle effects */}
+        {/* Particle effects - Object pooling */}
         <ParticleField audioData={audioData} isPlaying={isPlaying} />
 
-        {/* Circular spectrum with album art */}
+        {/* Circular spectrum with album art - CSS animations */}
         <CircularSpectrum
           audioData={audioData}
           isPlaying={isPlaying}
           albumArt={albumArt}
         />
 
-        {/* Vignette overlay */}
+        {/* Vignette overlay - static, GPU layer */}
         <div
           className="absolute inset-0 pointer-events-none"
           style={{
             background:
-              "radial-gradient(ellipse at center, transparent 30%, rgba(0,0,0,0.6) 100%)",
+              "radial-gradient(ellipse at center, transparent 30%, rgba(0,0,0,0.5) 100%)",
+            transform: "translateZ(0)",
+            zIndex: 15,
           }}
         />
 
-        {/* Noise texture overlay */}
+        {/* Noise texture - static, will-change: none for performance */}
         <div
-          className="absolute inset-0 pointer-events-none opacity-[0.03]"
+          className="absolute inset-0 pointer-events-none opacity-[0.025]"
           style={{
-            backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E")`,
+            backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E")`,
+            transform: "translateZ(0)",
+            zIndex: 20,
           }}
         />
       </div>

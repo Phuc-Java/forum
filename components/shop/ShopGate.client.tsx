@@ -55,10 +55,13 @@ export default function ShopGate({
         if (profileRes.documents.length > 0) {
           const profile = profileRes.documents[0];
           const roleKey = (profile.role as any) || "no_le";
+          // Đúng thứ tự cấp bậc: no_le(1) < pham_nhan(2) < chi_cuong_gia(3) < thanh_nhan(4) < chi_ton(5)
           const ROLE_LEVELS: Record<string, number> = {
-            pham_nhan: 1,
+            no_le: 1,
+            pham_nhan: 2,
+            chi_cuong_gia: 3,
             thanh_nhan: 4,
-            chi_ton: 6,
+            chi_ton: 5,
           };
           const userLevel = ROLE_LEVELS[roleKey] || 1;
           setCurrentUserRole(roleKey);

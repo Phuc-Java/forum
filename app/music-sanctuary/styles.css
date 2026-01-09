@@ -32,6 +32,8 @@
   transform: translateZ(0);
   will-change: transform, contents;
   image-rendering: -webkit-optimize-contrast;
+  /* High quality rendering */
+  image-rendering: crisp-edges;
 }
 
 .music-sanctuary video,
@@ -46,6 +48,25 @@
   will-change: transform, opacity;
 }
 
+/* High performance scrolling */
+.custom-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: var(--ms-primary) transparent;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Optimize blur effects with GPU */
+.blur-3xl {
+  transform: translateZ(0);
+  will-change: transform, filter;
+}
+
+/* Optimized transitions */
+.music-sanctuary * {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
 /* ============================================================================
    BASE STYLES
    ============================================================================ */
@@ -55,7 +76,7 @@
   inset: 0;
   width: 100vw;
   height: 100vh;
-  overflow: hidden;
+  overflow: hidden; /* Keep hidden to prevent scrolling */
   background: var(--ms-bg);
   font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
     sans-serif;
@@ -64,7 +85,6 @@
   color-scheme: dark;
   /* GPU acceleration for the container */
   transform: translateZ(0);
-  contain: layout style;
 }
 
 .music-sanctuary * {

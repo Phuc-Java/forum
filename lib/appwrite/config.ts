@@ -5,6 +5,8 @@ export const APPWRITE_CONFIG = {
   databaseId: "6939050d003171236d62",
   // Storage bucket for file uploads (images, attachments)
   storageBucketId: "693a642300377e4ba7d8", // Bucket "Kho"
+  // Storage bucket for messenger files
+  messengerBucketId: "69605a3500128d36b368", // Bucket "messenger_files"
   collections: {
     posts: "posts",
     comments: "comments",
@@ -15,6 +17,14 @@ export const APPWRITE_CONFIG = {
     resourceMeta: "resource_meta",
     resourceLikes: "resource_likes",
     resourceComments: "resource_comments",
+    // Messenger collections (NOTE: names are swapped in Appwrite)
+    // "messages" collection stores conversations
+    // "conversations" collection stores messages
+    messengerConversations: "messages", // Cuộc hội thoại
+    messengerMessages: "conversations", // Tin nhắn
+    conversationMembers: "conversation_members",
+    callSessions: "call_sessions",
+    userNicknames: "user_nicknames",
   },
 } as const;
 

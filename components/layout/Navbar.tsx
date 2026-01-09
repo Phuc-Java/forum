@@ -296,7 +296,10 @@ export default function Navbar() {
                 onFocus={openPerks}
                 onBlur={() => closePerksWithDelay(300)}
                 className={`font-mono text-sm transition-all duration-300 relative hover:scale-105 ${
-                  pathname?.startsWith("/shop") || pathname === "/chat"
+                  pathname?.startsWith("/shop") ||
+                  pathname === "/chat" ||
+                  pathname === "/messenger" ||
+                  pathname?.startsWith("/music-sanctuary")
                     ? "text-primary"
                     : "text-foreground/70 hover:text-primary"
                 }`}
@@ -305,64 +308,205 @@ export default function Navbar() {
               >
                 <span className="relative inline-flex items-center gap-2">
                   <span className="text-lg">🎖️</span>
-                  <span>Phúc Lợi</span>
-                  {(pathname?.startsWith("/shop") || pathname === "/chat") && (
+                  <span className="bg-gradient-to-r from-amber-400 via-orange-500 to-rose-500 bg-clip-text text-transparent font-bold animate-pulse">
+                    Phúc Lợi
+                  </span>
+                  <span className="absolute -top-1 -right-4 flex h-3 w-3">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-3 w-3 bg-rose-500"></span>
+                  </span>
+                  {(pathname?.startsWith("/shop") ||
+                    pathname === "/chat" ||
+                    pathname === "/messenger" ||
+                    pathname?.startsWith("/music-sanctuary")) && (
                     <span className="absolute -bottom-1 left-0 right-0 h-0.5 bg-primary animate-fade-in rounded-full"></span>
                   )}
                 </span>
               </button>
 
               <div
-                className={`absolute left-0 top-full mt-2 w-44 bg-surface border border-border rounded-lg shadow-2xl overflow-hidden z-50 transform transition-all duration-250 ${
+                className={`absolute left-0 top-full mt-2 w-64 bg-gradient-to-br from-slate-900/95 via-slate-800/95 to-slate-900/95 backdrop-blur-xl border-2 border-amber-500/30 rounded-2xl shadow-[0_0_50px_rgba(217,119,6,0.3)] overflow-hidden z-50 transform transition-all duration-300 ${
                   perksOpen
-                    ? "opacity-100 translate-y-0 visible"
-                    : "opacity-0 -translate-y-2 invisible"
+                    ? "opacity-100 translate-y-0 visible scale-100"
+                    : "opacity-0 -translate-y-4 invisible scale-95"
                 }`}
+                style={{
+                  boxShadow:
+                    "0 0 60px rgba(217,119,6,0.4), 0 0 100px rgba(217,119,6,0.2), inset 0 0 80px rgba(217,119,6,0.05)",
+                }}
                 onMouseEnter={openPerks}
                 onMouseLeave={() => closePerksWithDelay(300)}
               >
-                <Link
-                  href="/shop"
-                  className={`flex items-center px-5 py-3 font-mono text-sm text-foreground/80 hover:bg-primary/10 hover:text-primary transition-all duration-150 ${
-                    pathname === "/shop" ? "text-primary" : ""
-                  }`}
-                >
-                  <span className="mr-3 text-lg" aria-hidden="true">
-                    🛒
-                  </span>
-                  <span>Tàng Kinh Các</span>
-                  <span className="ml-auto text-gray-400 transition-colors group-hover:text-primary">
-                    →
-                  </span>
-                </Link>
-                <Link
-                  href="/chat"
-                  className={`flex items-center px-5 py-3 font-mono text-sm text-foreground/80 hover:bg-primary/10 hover:text-primary transition-all duration-150 ${
-                    pathname === "/chat" ? "text-primary" : ""
-                  }`}
-                >
-                  <span className="mr-3 text-lg" aria-hidden="true">
-                    🤖
-                  </span>
-                  <span>Đấng Toàn Năng</span>
-                  <span className="ml-auto text-gray-400 transition-colors group-hover:text-primary">
-                    →
-                  </span>
-                </Link>
-                <Link
-                  href="/3Dtest"
-                  className={`flex items-center px-5 py-3 font-mono text-sm text-foreground/80 hover:bg-primary/10 hover:text-primary transition-all duration-150 ${
-                    pathname?.startsWith("/3Dtest") ? "text-primary" : ""
-                  }`}
-                >
-                  <span className="mr-3 text-lg" aria-hidden="true">
-                    🏺
-                  </span>
-                  <span>Trân Tàng</span>
-                  <span className="ml-auto text-gray-400 transition-colors group-hover:text-primary">
-                    →
-                  </span>
-                </Link>
+                {/* Decorative top border with gradient */}
+                <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-amber-400 to-transparent"></div>
+
+                {/* Ancient patterns overlay */}
+                <div className="absolute inset-0 opacity-5 bg-[radial-gradient(circle_at_50%_50%,_rgba(251,191,36,0.2),transparent_50%)] pointer-events-none"></div>
+
+                <div className="relative p-2">
+                  <Link
+                    href="/shop"
+                    className={`flex items-center px-4 py-3.5 font-mono text-sm rounded-xl transition-all duration-200 group relative overflow-hidden ${
+                      pathname === "/shop"
+                        ? "bg-gradient-to-r from-amber-500/20 to-orange-500/20 text-amber-300 shadow-lg shadow-amber-500/20"
+                        : "text-slate-300 hover:bg-gradient-to-r hover:from-amber-500/10 hover:to-orange-500/10 hover:text-amber-200"
+                    }`}
+                  >
+                    <div className="absolute inset-0 bg-gradient-to-r from-amber-400/0 via-amber-400/5 to-amber-400/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700"></div>
+                    <span
+                      className="mr-3 text-xl relative z-10"
+                      aria-hidden="true"
+                    >
+                      📚
+                    </span>
+                    <span className="relative z-10 font-semibold">
+                      Tàng Kinh Các
+                    </span>
+                    <span className="ml-auto text-amber-400/50 transition-all group-hover:text-amber-300 group-hover:translate-x-1 relative z-10">
+                      →
+                    </span>
+                  </Link>
+
+                  <Link
+                    href="/chat"
+                    className={`flex items-center px-4 py-3.5 font-mono text-sm rounded-xl transition-all duration-200 group relative overflow-hidden ${
+                      pathname === "/chat"
+                        ? "bg-gradient-to-r from-purple-600/25 to-violet-600/25 text-purple-200 shadow-lg shadow-purple-500/30"
+                        : "text-slate-300 hover:bg-gradient-to-r hover:from-purple-600/15 hover:to-violet-600/15 hover:text-purple-100"
+                    }`}
+                  >
+                    <div className="absolute inset-0 bg-gradient-to-r from-purple-400/0 via-purple-400/10 to-purple-400/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700"></div>
+                    <span
+                      className="mr-3 text-xl relative z-10"
+                      aria-hidden="true"
+                    >
+                      🤖
+                    </span>
+                    <span className="relative z-10 font-semibold bg-gradient-to-r from-purple-200 to-violet-200 bg-clip-text text-transparent">
+                      Đấng Toàn Năng
+                    </span>
+                    <span className="ml-auto text-purple-400/60 transition-all group-hover:text-purple-300 group-hover:translate-x-1 relative z-10">
+                      →
+                    </span>
+                  </Link>
+
+                  <Link
+                    href="/messenger"
+                    className={`flex items-center px-4 py-3.5 font-mono text-sm rounded-xl transition-all duration-200 group relative overflow-hidden ${
+                      pathname === "/messenger"
+                        ? "bg-gradient-to-r from-cyan-500/20 to-blue-500/20 text-cyan-300 shadow-lg shadow-cyan-500/20"
+                        : "text-slate-300 hover:bg-gradient-to-r hover:from-cyan-500/10 hover:to-blue-500/10 hover:text-cyan-200"
+                    }`}
+                  >
+                    <div className="absolute inset-0 bg-gradient-to-r from-cyan-400/0 via-cyan-400/5 to-cyan-400/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700"></div>
+                    <span
+                      className="mr-3 text-xl relative z-10"
+                      aria-hidden="true"
+                    >
+                      ☁️
+                    </span>
+                    <span className="relative z-10 font-semibold">
+                      Thông Linh Các
+                    </span>
+                    <span className="ml-auto flex items-center gap-1.5 relative z-10">
+                      <span className="text-[9px] px-2 py-1 bg-cyan-500/30 text-cyan-300 rounded-full font-bold border border-cyan-400/40 shadow-sm shadow-cyan-500/20">
+                        MỚI
+                      </span>
+                    </span>
+                  </Link>
+
+                  <Link
+                    href="/music-sanctuary"
+                    className={`flex items-center px-4 py-3.5 font-mono text-sm rounded-xl transition-all duration-200 group relative overflow-hidden ${
+                      pathname?.startsWith("/music-sanctuary")
+                        ? "bg-gradient-to-r from-rose-500/20 to-pink-500/20 text-rose-300 shadow-lg shadow-rose-500/20"
+                        : "text-slate-300 hover:bg-gradient-to-r hover:from-rose-500/10 hover:to-pink-500/10 hover:text-rose-200"
+                    }`}
+                  >
+                    <div className="absolute inset-0 bg-gradient-to-r from-rose-400/0 via-rose-400/5 to-rose-400/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700"></div>
+                    <span
+                      className="mr-3 text-xl relative z-10"
+                      aria-hidden="true"
+                    >
+                      🎵
+                    </span>
+                    <span className="relative z-10 font-semibold">
+                      Linh Âm Đài
+                    </span>
+                    <span className="ml-auto flex items-center gap-1.5 relative z-10">
+                      <span className="text-[9px] px-2 py-1 bg-rose-500/30 text-rose-300 rounded-full font-bold border border-rose-400/40 shadow-sm shadow-rose-500/20">
+                        MỚI
+                      </span>
+                    </span>
+                  </Link>
+
+                  <Link
+                    href="/3Dtest"
+                    className={`flex items-center px-4 py-3.5 font-mono text-sm rounded-xl transition-all duration-200 group relative overflow-hidden ${
+                      pathname?.startsWith("/3Dtest")
+                        ? "bg-gradient-to-r from-indigo-500/20 to-blue-600/20 text-indigo-300 shadow-lg shadow-indigo-500/20"
+                        : "text-slate-300 hover:bg-gradient-to-r hover:from-indigo-500/10 hover:to-blue-600/10 hover:text-indigo-200"
+                    }`}
+                  >
+                    <div className="absolute inset-0 bg-gradient-to-r from-indigo-400/0 via-indigo-400/5 to-indigo-400/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700"></div>
+                    <span
+                      className="mr-3 text-xl relative z-10"
+                      aria-hidden="true"
+                    >
+                      🏺
+                    </span>
+                    <span className="relative z-10 font-semibold">
+                      Trân Tàng
+                    </span>
+                    <span className="ml-auto text-indigo-400/50 transition-all group-hover:text-indigo-300 group-hover:translate-x-1 relative z-10">
+                      →
+                    </span>
+                  </Link>
+
+                  {/* Divider with glow */}
+                  <div className="my-2 px-4">
+                    <div className="h-px bg-gradient-to-r from-transparent via-amber-500/40 to-transparent shadow-[0_0_8px_rgba(217,119,6,0.3)]"></div>
+                  </div>
+
+                  {/* Supreme Item - Thiên Cơ Các */}
+                  <Link
+                    href="/thien-co-cac"
+                    className={`flex items-center px-4 py-4 font-mono text-sm rounded-xl transition-all duration-200 group relative overflow-hidden ${
+                      pathname?.startsWith("/thien-co-cac")
+                        ? "bg-gradient-to-r from-amber-600/30 via-yellow-500/25 to-amber-600/30 shadow-2xl shadow-amber-500/40"
+                        : "bg-gradient-to-r from-amber-600/15 via-yellow-500/10 to-amber-600/15 hover:from-amber-600/25 hover:via-yellow-500/20 hover:to-amber-600/25"
+                    }`}
+                    style={{
+                      boxShadow: pathname?.startsWith("/thien-co-cac")
+                        ? "0 0 30px rgba(217,119,6,0.5), 0 0 60px rgba(217,119,6,0.3), inset 0 0 30px rgba(217,119,6,0.1)"
+                        : "0 0 15px rgba(217,119,6,0.2), inset 0 0 20px rgba(217,119,6,0.05)",
+                    }}
+                  >
+                    {/* Animated border glow */}
+                    <div className="absolute inset-0 rounded-xl border-2 border-amber-400/40 group-hover:border-amber-400/60 transition-all duration-300"></div>
+
+                    {/* Sweeping light effect */}
+                    <div className="absolute inset-0 bg-gradient-to-r from-amber-300/0 via-amber-200/20 to-amber-300/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000"></div>
+
+                    <span
+                      className="mr-3 text-2xl relative z-10 drop-shadow-[0_0_8px_rgba(217,119,6,0.8)]"
+                      aria-hidden="true"
+                    >
+                      ⚜️
+                    </span>
+                    <span className="relative z-10 bg-gradient-to-r from-amber-200 via-yellow-100 to-amber-200 bg-clip-text text-transparent font-bold text-base drop-shadow-[0_0_10px_rgba(217,119,6,0.5)]">
+                      Thiên Cơ Các
+                    </span>
+                    <span className="ml-auto flex items-center gap-1.5 relative z-10">
+                      <span className="text-[8px] px-2 py-1 bg-gradient-to-r from-amber-500/50 via-yellow-400/50 to-amber-500/50 text-amber-100 rounded-full font-black border-2 border-amber-300/60 shadow-lg shadow-amber-500/40 tracking-wider">
+                        CHÍ TÔN
+                      </span>
+                    </span>
+                  </Link>
+                </div>
+
+                {/* Decorative bottom border with gradient */}
+                <div className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-amber-400 to-transparent"></div>
               </div>
             </div>
             <Link

@@ -38,7 +38,10 @@ export function useAudioEngine({
   const dataArrayRef = useRef<Uint8Array<ArrayBuffer> | null>(null);
   const animationFrameRef = useRef<number | null>(null);
   const isConnectedRef = useRef(false);
-  const [isReady, setIsReady] = useState(false);
+  const [readyTrackId, setReadyTrackId] = useState<string | null>(null);
+
+  // Derived state: isReady when current track matches ready track
+  const isReady = track?.id === readyTrackId;
 
   // Khởi tạo Audio Context
   const initAudioContext = useCallback(() => {
@@ -46,19 +49,21 @@ export function useAudioEngine({
 
     try {
       const AudioCtx =
-        window.AudioContext || (window as any).webkitAudioContext;
+        window.AudioContext ||
+        (window as unknown as { webkitAudioContext: typeof AudioContext })
+          .webkitAudioContext;
       audioContextRef.current = new AudioCtx();
 
-      // Tạo Analyser Node với độ phân giải vừa đủ (giảm từ 2048 để tối ưu performance)
+      // Tạo Analyser Node - cân bằng giữa chất lượng và performance
       const analyser = audioContextRef.current.createAnalyser();
-      analyser.fftSize = 1024; // Giảm để tối ưu performance, vẫn đủ cho visualization
-      analyser.smoothingTimeConstant = 0.75; // Làm mượt transitions
+      analyser.fftSize = 512; // Giảm để tối ưu performance (256 bins)
+      analyser.smoothingTimeConstant = 0.85; // Tăng smoothing để giảm jitter
       analyserRef.current = analyser;
 
       // Buffer cho dữ liệu tần số
       dataArrayRef.current = new Uint8Array(analyser.frequencyBinCount);
 
-      console.log("[AudioEngine] Audio Context initialized");
+      console.log("[AudioEngine] Audio Context initialized with high-res FFT");
     } catch (error) {
       console.error("[AudioEngine] Failed to create AudioContext:", error);
       onError("Failed to initialize audio engine");
@@ -89,10 +94,14 @@ export function useAudioEngine({
     }
   }, []);
 
-  // Phân tích audio real-time
+  // Phân tích audio real-time - sử dụng ref để tránh circular dependency
+  const analyzeAudioRef = useRef<() => void>(() => {});
+
   const analyzeAudio = useCallback(() => {
     if (!analyserRef.current || !dataArrayRef.current) {
-      animationFrameRef.current = requestAnimationFrame(analyzeAudio);
+      animationFrameRef.current = requestAnimationFrame(() =>
+        analyzeAudioRef.current()
+      );
       return;
     }
 
@@ -100,14 +109,14 @@ export function useAudioEngine({
     const data = dataArrayRef.current;
     const bufferLength = data.length;
 
-    // Chia dải tần số (với FFT 1024 -> 512 bins)
-    // Bass: 20-250Hz (bins 0-15)
-    // Mid: 250-4000Hz (bins 15-160)
-    // Treble: 4000-20000Hz (bins 160+)
+    // Chia dải tần số với FFT 512 -> 256 bins
+    // Bass: ~20-250Hz (bins 0-10)
+    // Mid: ~250-4000Hz (bins 10-80)
+    // Treble: ~4000-20000Hz (bins 80+)
 
-    const bassRange = data.slice(0, 20);
-    const midRange = data.slice(20, 120);
-    const trebleRange = data.slice(120, 256);
+    const bassRange = data.slice(0, 12);
+    const midRange = data.slice(12, 80);
+    const trebleRange = data.slice(80, 180);
 
     const getAverage = (arr: Uint8Array<ArrayBuffer>) => {
       let sum = 0;
@@ -125,7 +134,7 @@ export function useAudioEngine({
       return max / 255;
     };
 
-    // Tính RMS (Root Mean Square) cho energy - optimized
+    // Tính RMS (Root Mean Square) cho energy - full precision
     let sumSquares = 0;
     for (let i = 0; i < bufferLength; i++) {
       const normalized = data[i] / 255;
@@ -133,11 +142,10 @@ export function useAudioEngine({
     }
     const rms = Math.sqrt(sumSquares / bufferLength);
 
-    // Spectral Centroid - simplified for performance
+    // Spectral Centroid - full precision for better accuracy
     let numerator = 0;
     let denominator = 0;
-    // Sample every 4th bin for performance
-    for (let i = 0; i < bufferLength; i += 4) {
+    for (let i = 0; i < bufferLength; i++) {
       numerator += i * data[i];
       denominator += data[i];
     }
@@ -156,12 +164,50 @@ export function useAudioEngine({
     };
 
     onAnalysis(analysis);
-    animationFrameRef.current = requestAnimationFrame(analyzeAudio);
+    animationFrameRef.current = requestAnimationFrame(() =>
+      analyzeAudioRef.current()
+    );
   }, [onAnalysis]);
+
+  // Cập nhật ref khi analyzeAudio thay đổi
+  useEffect(() => {
+    analyzeAudioRef.current = analyzeAudio;
+  }, [analyzeAudio]);
 
   // Track retry state
   const retryCountRef = useRef(0);
   const maxRetries = 2;
+
+  // Track current loading track id for ready state
+  const loadingTrackIdRef = useRef<string | null>(null);
+
+  // Refs cho callbacks để tránh re-init audio element
+  const onDurationChangeRef = useRef(onDurationChange);
+  const onLoadedRef = useRef(onLoaded);
+  const onTimeUpdateRef = useRef(onTimeUpdate);
+  const onEndedRef = useRef(onEnded);
+  const onErrorRef = useRef(onError);
+  const initAudioContextRef = useRef(initAudioContext);
+  const connectSourceRef = useRef(connectSource);
+
+  // Cập nhật refs khi callbacks thay đổi
+  useEffect(() => {
+    onDurationChangeRef.current = onDurationChange;
+    onLoadedRef.current = onLoaded;
+    onTimeUpdateRef.current = onTimeUpdate;
+    onEndedRef.current = onEnded;
+    onErrorRef.current = onError;
+    initAudioContextRef.current = initAudioContext;
+    connectSourceRef.current = connectSource;
+  }, [
+    onDurationChange,
+    onLoaded,
+    onTimeUpdate,
+    onEnded,
+    onError,
+    initAudioContext,
+    connectSource,
+  ]);
 
   // Khởi tạo audio element
   useEffect(() => {
@@ -174,18 +220,21 @@ export function useAudioEngine({
     const handleLoadedMetadata = () => {
       console.log("[AudioEngine] Metadata loaded, duration:", audio.duration);
       retryCountRef.current = 0; // Reset retry count on success
-      onDurationChange(audio.duration);
-      onLoaded();
-      setIsReady(true);
+      onDurationChangeRef.current(audio.duration);
+      onLoadedRef.current();
+      // Mark current loading track as ready
+      if (loadingTrackIdRef.current) {
+        setReadyTrackId(loadingTrackIdRef.current);
+      }
     };
 
     const handleTimeUpdate = () => {
-      onTimeUpdate(audio.currentTime);
+      onTimeUpdateRef.current(audio.currentTime);
     };
 
     const handleEnded = () => {
       console.log("[AudioEngine] Track ended");
-      onEnded();
+      onEndedRef.current();
     };
 
     const handleError = (e: Event) => {
@@ -217,7 +266,9 @@ export function useAudioEngine({
         return;
       }
 
-      onError("Failed to load audio file. Please try another track.");
+      onErrorRef.current(
+        "Failed to load audio file. Please try another track."
+      );
     };
 
     const handleCanPlay = () => {
@@ -226,9 +277,9 @@ export function useAudioEngine({
       // Only init audio context for local files or CORS-enabled sources
       // Try to connect, but don't fail if CORS blocks it
       try {
-        initAudioContext();
+        initAudioContextRef.current();
         if (audio.crossOrigin === "anonymous") {
-          connectSource();
+          connectSourceRef.current();
         }
       } catch (err) {
         console.warn("[AudioEngine] Could not connect analyser:", err);
@@ -262,7 +313,9 @@ export function useAudioEngine({
     if (!audioRef.current || !track) return;
 
     console.log("[AudioEngine] Loading track:", track.title, track.src);
-    setIsReady(false);
+
+    // Store current loading track id for ready state callback
+    loadingTrackIdRef.current = track.id;
 
     const audio = audioRef.current;
 
@@ -280,7 +333,7 @@ export function useAudioEngine({
 
     audio.src = track.src;
     audio.load();
-  }, [track?.id, track?.src, track?.title]);
+  }, [track]);
 
   // Play/Pause
   useEffect(() => {
@@ -333,9 +386,9 @@ export function useAudioEngine({
   }, []);
 
   return {
-    audioElement: audioRef.current,
-    audioContext: audioContextRef.current,
-    analyser: analyserRef.current,
+    audioElementRef: audioRef,
+    audioContextRef: audioContextRef,
+    analyserRef: analyserRef,
     isReady,
   };
 }

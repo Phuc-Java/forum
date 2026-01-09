@@ -326,13 +326,16 @@ export default function MusicSanctuaryClient({
   // Main player
   return (
     <div className="music-sanctuary">
-      {/* Premium Visualizer Background */}
-      <PremiumVisualizer
-        audioData={audioData}
-        isPlaying={isPlaying}
-        albumArt={currentTrack?.cover}
-        accentColor={accentColor}
-      />
+      {/* Background container with overflow control */}
+      <div className="fixed inset-0 overflow-hidden" style={{ zIndex: 0 }}>
+        {/* Premium Visualizer Background */}
+        <PremiumVisualizer
+          audioData={audioData}
+          isPlaying={isPlaying}
+          albumArt={currentTrack?.cover}
+          accentColor={accentColor}
+        />
+      </div>
 
       {/* Premium Player Interface */}
       <AnimatePresence mode="wait">

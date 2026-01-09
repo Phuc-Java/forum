@@ -10,6 +10,9 @@ import { GAME_CONFIG, GameMode } from "./config/constants";
 import { AncientButton } from "./ui/AncientButton";
 import { SpiritBackground } from "./ui/SpiritBackground";
 import { LackSpiritModal } from "./ui/LackSpiritModal";
+import { AccessDeniedModal } from "./ui/AccessDeniedModal";
+import { UnderDevelopmentModal } from "./ui/UnderDevelopmentModal";
+import { ServerRequiredModal } from "./ui/ServerRequiredModal";
 
 // Imports Games
 import { MiningGame } from "./games/MiningGame";
@@ -35,6 +38,20 @@ export default function GameGrid() {
   const [alertState, setAlertState] = useState({
     isOpen: false,
     required: 0,
+  });
+
+  // --- STATE CHO MODAL GAME GIẢ ---
+  const [accessDeniedModal, setAccessDeniedModal] = useState({
+    isOpen: false,
+    gameName: "",
+  });
+  const [developmentModal, setDevelopmentModal] = useState({
+    isOpen: false,
+    gameName: "",
+  });
+  const [serverRequiredModal, setServerRequiredModal] = useState({
+    isOpen: false,
+    gameName: "",
   });
 
   useEffect(() => {
@@ -146,7 +163,41 @@ export default function GameGrid() {
 
   // --- HÀM MỚI: XỬ LÝ CHỌN GAME ---
   // Kiểm tra tiền trước khi cho vào
-  const handleGameSelect = (gameId: string, cost: number) => {
+  const handleGameSelect = (
+    gameId: string,
+    cost: number,
+    gameName: string,
+    isLocked?: boolean,
+    isDevelopment?: boolean,
+    needsServer?: boolean
+  ) => {
+    // Kiểm tra nếu game bị khóa (chưa đủ quyền hạn)
+    if (isLocked) {
+      setAccessDeniedModal({
+        isOpen: true,
+        gameName: gameName,
+      });
+      return;
+    }
+
+    // Kiểm tra nếu game cần server
+    if (needsServer) {
+      setServerRequiredModal({
+        isOpen: true,
+        gameName: gameName,
+      });
+      return;
+    }
+
+    // Kiểm tra nếu game đang phát triển
+    if (isDevelopment) {
+      setDevelopmentModal({
+        isOpen: true,
+        gameName: gameName,
+      });
+      return;
+    }
+
     // Nếu game có phí vào cửa (hoặc phí chơi tối thiểu) lớn hơn số tiền hiện có
     if (balance < cost) {
       setAlertState({
@@ -174,6 +225,27 @@ export default function GameGrid() {
           setAlertState((prev) => ({ ...prev, isOpen: false }));
           setActiveMode("MINING");
         }}
+      />
+
+      {/* --- MODAL CHƯA ĐỦ QUYỀN HẠN --- */}
+      <AccessDeniedModal
+        isOpen={accessDeniedModal.isOpen}
+        onClose={() => setAccessDeniedModal({ isOpen: false, gameName: "" })}
+        gameName={accessDeniedModal.gameName}
+      />
+
+      {/* --- MODAL CẦN SERVER --- */}
+      <ServerRequiredModal
+        isOpen={serverRequiredModal.isOpen}
+        onClose={() => setServerRequiredModal({ isOpen: false, gameName: "" })}
+        gameName={serverRequiredModal.gameName}
+      />
+
+      {/* --- MODAL ĐANG PHÁT TRIỂN --- */}
+      <UnderDevelopmentModal
+        isOpen={developmentModal.isOpen}
+        onClose={() => setDevelopmentModal({ isOpen: false, gameName: "" })}
+        gameName={developmentModal.gameName}
       />
 
       {/* HEADER HUD */}
@@ -230,7 +302,16 @@ export default function GameGrid() {
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: i * 0.1 }}
                   whileHover={{ y: -10, scale: 1.02 }}
-                  onClick={() => handleGameSelect(game.id, game.cost)}
+                  onClick={() =>
+                    handleGameSelect(
+                      game.id,
+                      game.cost,
+                      game.name,
+                      (game as any).isLocked,
+                      (game as any).isDevelopment,
+                      (game as any).needsServer
+                    )
+                  }
                   // OPTIMIZATION: will-change + transform-gpu cho từng thẻ bài để hover siêu mượt
                   className="group relative h-72 cursor-pointer rounded-2xl bg-[#0a0a0a] border border-white/5 overflow-hidden transition-all duration-500 hover:border-amber-500/50 hover:shadow-[0_0_40px_rgba(245,158,11,0.15)] will-change-transform transform-gpu"
                 >
