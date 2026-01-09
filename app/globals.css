@@ -1584,3 +1584,583 @@ html::-webkit-scrollbar {
 .tooltip-animate {
   animation: tooltipFade 0.2s ease-out;
 }
+
+/* ========================================
+   MOBILE RESPONSIVE STYLES
+   Tối ưu giao diện cho điện thoại
+   ======================================== */
+
+/* Điều chỉnh chung cho mobile */
+@media (max-width: 768px) {
+  /* Giảm font size cho tiêu đề lớn */
+  h1 {
+    font-size: 1.75rem !important;
+    line-height: 1.2 !important;
+  }
+
+  h2 {
+    font-size: 1.5rem !important;
+  }
+
+  h3 {
+    font-size: 1.25rem !important;
+  }
+
+  /* Giảm padding cho các container */
+  .container,
+  .max-w-4xl,
+  .max-w-5xl,
+  .max-w-6xl,
+  .max-w-7xl {
+    padding-left: 1rem !important;
+    padding-right: 1rem !important;
+  }
+
+  /* Điều chỉnh navbar mobile */
+  nav.sticky {
+    padding: 0.5rem 0.75rem;
+  }
+
+  /* Ẩn text "Diễn đàn khét tiếng" trên mobile */
+  nav .text-\[10px\] {
+    display: none;
+  }
+
+  /* Giảm kích thước logo text */
+  nav h1 {
+    font-size: 1.25rem !important;
+  }
+
+  /* Điều chỉnh các card grid thành 1 cột */
+  .grid-cols-2,
+  .grid-cols-3,
+  .sm\:grid-cols-2,
+  .sm\:grid-cols-3,
+  .md\:grid-cols-3,
+  .lg\:grid-cols-3 {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Giữ stats cards 2 cột trên mobile */
+  .grid.grid-cols-2.sm\:grid-cols-3.md\:grid-cols-5 {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+
+  /* Title icon box nhỏ hơn */
+  .title-icon-box {
+    width: 2.25rem;
+    height: 2.25rem;
+  }
+
+  .title-icon-inner {
+    font-size: 0.9rem;
+  }
+
+  /* Giảm backdrop blur cho hiệu suất mobile */
+  .backdrop-blur-xl,
+  .backdrop-blur-lg,
+  .backdrop-blur-md {
+    backdrop-filter: blur(8px) !important;
+    -webkit-backdrop-filter: blur(8px) !important;
+  }
+
+  /* Tắt một số animation nặng */
+  .animate-glow-pulse,
+  .animate-pulse-glow {
+    animation: none !important;
+  }
+
+  /* Giảm shadow cho mobile */
+  .shadow-lg,
+  .shadow-xl,
+  .shadow-2xl {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3) !important;
+  }
+
+  /* Post card spacing */
+  .space-y-8 {
+    gap: 1.5rem !important;
+  }
+
+  .space-y-4 {
+    gap: 1rem !important;
+  }
+
+  /* Prose mobile optimization */
+  .prose {
+    font-size: 0.9rem !important;
+    line-height: 1.6 !important;
+  }
+
+  .prose img {
+    max-width: 100% !important;
+    float: none !important;
+    margin: 1rem 0 !important;
+  }
+
+  .prose img[style*="float: left"],
+  .prose img[style*="float: right"] {
+    float: none !important;
+    max-width: 100% !important;
+    margin: 1rem 0 !important;
+  }
+
+  /* Căn giữa nội dung trên mobile cho trang chủ */
+  .lg\:text-left {
+    text-align: center !important;
+  }
+
+  .lg\:items-start {
+    align-items: center !important;
+  }
+
+  .lg\:mx-0 {
+    margin-left: auto !important;
+    margin-right: auto !important;
+  }
+}
+
+/* Điều chỉnh cho màn hình rất nhỏ (< 480px) */
+@media (max-width: 480px) {
+  /* Font sizes nhỏ hơn */
+  h1 {
+    font-size: 1.5rem !important;
+  }
+
+  h2 {
+    font-size: 1.25rem !important;
+  }
+
+  /* Padding nhỏ hơn */
+  .container,
+  .max-w-4xl,
+  .max-w-5xl,
+  .max-w-6xl,
+  .max-w-7xl {
+    padding-left: 0.75rem !important;
+    padding-right: 0.75rem !important;
+  }
+
+  /* Stats cards smaller */
+  .grid.grid-cols-2.sm\:grid-cols-3.md\:grid-cols-5 {
+    gap: 0.5rem !important;
+  }
+
+  .grid.grid-cols-2.sm\:grid-cols-3.md\:grid-cols-5 button {
+    padding: 0.75rem !important;
+  }
+
+  .grid.grid-cols-2.sm\:grid-cols-3.md\:grid-cols-5 button span.text-3xl {
+    font-size: 1.5rem !important;
+  }
+
+  .grid.grid-cols-2.sm\:grid-cols-3.md\:grid-cols-5 button span.text-2xl {
+    font-size: 1.25rem !important;
+  }
+
+  /* Nhỏ input search */
+  input[type="text"],
+  input[type="email"],
+  input[type="password"],
+  textarea {
+    font-size: 16px !important; /* Prevent zoom on iOS */
+  }
+
+  /* Badge nhỏ hơn */
+  .inline-flex.items-center.gap-2.px-3.py-1 {
+    padding: 0.25rem 0.5rem !important;
+    gap: 0.25rem !important;
+  }
+
+  /* Giảm spacing */
+  .py-8 {
+    padding-top: 1.5rem !important;
+    padding-bottom: 1.5rem !important;
+  }
+
+  .pt-8 {
+    padding-top: 1.5rem !important;
+  }
+
+  .pb-16 {
+    padding-bottom: 4rem !important;
+  }
+
+  /* Hide decorative elements */
+  .fixed.left-8,
+  .fixed.right-8 {
+    display: none !important;
+  }
+}
+
+/* Mobile bottom nav safe area */
+@media (max-width: 1024px) {
+  /* Thêm padding bottom cho content khi có mobile nav */
+  main {
+    padding-bottom: 100px !important;
+  }
+
+  /* Ẩn sidebar trên tablet/mobile */
+  aside.sticky,
+  aside.fixed {
+    display: none !important;
+  }
+
+  /* Full width content khi không có sidebar */
+  .flex-1 {
+    width: 100% !important;
+  }
+}
+
+/* ========================================
+   PAGE-SPECIFIC MOBILE STYLES
+   ======================================== */
+
+/* Trang Forum - PostCard mobile */
+@media (max-width: 768px) {
+  /* Post card compact */
+  [class*="PostCard"] .flex.items-start.gap-4,
+  .post-card .flex.items-start.gap-4 {
+    gap: 0.75rem !important;
+  }
+
+  /* Avatar nhỏ hơn */
+  [class*="PostCard"] .w-12.h-12,
+  .post-card .w-12.h-12 {
+    width: 2.5rem !important;
+    height: 2.5rem !important;
+  }
+
+  /* Comment section compact */
+  .comments-section {
+    padding: 0.75rem !important;
+  }
+}
+
+/* Trang Members - Grid optimization */
+@media (max-width: 640px) {
+  /* Member cards stack to 1 column */
+  .grid.sm\:grid-cols-2.lg\:grid-cols-3 {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Member card compact */
+  .grid.sm\:grid-cols-2.lg\:grid-cols-3 > a {
+    padding: 1rem !important;
+  }
+
+  /* Avatar trong member card */
+  .grid.sm\:grid-cols-2.lg\:grid-cols-3 .w-16.h-16 {
+    width: 3rem !important;
+    height: 3rem !important;
+  }
+}
+
+/* Trang Resources - Category selector mobile */
+@media (max-width: 768px) {
+  /* Mobile category horizontal scroll */
+  .md\:hidden.mb-6.overflow-x-auto {
+    padding-bottom: 0.5rem;
+    margin-bottom: 1rem !important;
+  }
+
+  .md\:hidden.mb-6.overflow-x-auto .flex.gap-2 {
+    gap: 0.5rem !important;
+  }
+
+  .md\:hidden.mb-6.overflow-x-auto button {
+    padding: 0.5rem 0.75rem !important;
+    font-size: 0.75rem !important;
+  }
+
+  /* Resource cards */
+  .resource-card {
+    padding: 1rem !important;
+  }
+}
+
+/* Trang Shop - Product grid */
+@media (max-width: 640px) {
+  /* Shop header compact */
+  .text-4xl.md\:text-5xl {
+    font-size: 1.75rem !important;
+  }
+
+  /* Product grid 1 column */
+  .shop-grid,
+  [class*="shop"] .grid {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+/* Trang Chat - Mobile optimization */
+@media (max-width: 768px) {
+  /* Hide sidebar on mobile */
+  .chat-sidebar,
+  [class*="ChatSidebar"] {
+    display: none !important;
+  }
+
+  /* Chat area full width */
+  .chat-container {
+    width: 100% !important;
+  }
+
+  /* Message bubbles */
+  .message-user,
+  .message-ai {
+    max-width: 90% !important;
+    padding: 0.5rem 0.75rem !important;
+    font-size: 0.875rem !important;
+  }
+
+  /* Chat input area */
+  .chat-input-area {
+    padding: 0.75rem !important;
+  }
+}
+
+/* Trang Earn - Game grid mobile */
+@media (max-width: 768px) {
+  /* Game title smaller */
+  .text-6xl.md\:text-8xl {
+    font-size: 2.5rem !important;
+  }
+
+  /* Game cards */
+  .game-card,
+  [class*="game"] .p-6 {
+    padding: 1rem !important;
+  }
+
+  /* Balance display */
+  .balance-display {
+    font-size: 1rem !important;
+  }
+}
+
+/* Trang Gallery - Masonry mobile */
+@media (max-width: 768px) {
+  /* Gallery header */
+  .gallery-header {
+    padding: 1rem !important;
+  }
+
+  /* Hide vertical text decorations */
+  .writing-vertical-rl {
+    display: none !important;
+  }
+
+  /* Gallery grid to 2 columns on mobile */
+  .gallery-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 0.5rem !important;
+  }
+}
+
+/* Trang Phim - Mobile optimization */
+@media (max-width: 768px) {
+  /* Hide cultivation bar on mobile */
+  [data-phim-cultivation] {
+    display: none !important;
+  }
+
+  /* Category filter horizontal scroll */
+  .film-categories {
+    overflow-x: auto !important;
+    white-space: nowrap !important;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Film card compact */
+  .film-card {
+    padding: 0.75rem !important;
+  }
+}
+
+/* Trang Intro - Section mobile */
+@media (max-width: 768px) {
+  /* Intro sections spacing */
+  .intro-section {
+    padding: 2rem 1rem !important;
+  }
+
+  /* Role hierarchy cards */
+  .role-card {
+    padding: 1rem !important;
+  }
+
+  /* Hide decorative fixed elements */
+  .intro-decoration {
+    display: none !important;
+  }
+}
+
+/* Trang Profile - Mobile layout */
+@media (max-width: 768px) {
+  /* Profile header compact */
+  .profile-header {
+    flex-direction: column !important;
+    text-align: center !important;
+  }
+
+  /* Profile avatar centered */
+  .profile-avatar {
+    margin: 0 auto 1rem !important;
+  }
+
+  /* Stats row horizontal scroll */
+  .profile-stats {
+    overflow-x: auto !important;
+    flex-wrap: nowrap !important;
+    justify-content: flex-start !important;
+    gap: 0.75rem !important;
+    padding-bottom: 0.5rem;
+  }
+}
+
+/* Trang Login - Form centered */
+@media (max-width: 480px) {
+  /* Login form container */
+  .login-container,
+  [class*="login"] .max-w-md {
+    padding: 1rem !important;
+    margin: 0 0.5rem !important;
+  }
+
+  /* Auth buttons */
+  .auth-button {
+    padding: 0.75rem 1rem !important;
+    font-size: 0.875rem !important;
+  }
+}
+
+/* ========================================
+   TOUCH-FRIENDLY INTERACTIONS
+   ======================================== */
+
+@media (hover: none) and (pointer: coarse) {
+  /* Tăng kích thước tap targets */
+  button,
+  a,
+  [role="button"] {
+    min-height: 44px;
+    min-width: 44px;
+  }
+
+  /* Disable hover effects trên touch devices */
+  .card-hover:hover,
+  .btn-press:hover,
+  .group:hover .group-hover\:scale-110 {
+    transform: none !important;
+  }
+
+  /* Active states thay cho hover */
+  button:active,
+  a:active {
+    opacity: 0.8;
+    transform: scale(0.98);
+  }
+
+  /* Disable complex animations */
+  .animate-float,
+  .animate-bounce-slow {
+    animation: none !important;
+  }
+}
+
+/* ========================================
+   PERFORMANCE OPTIMIZATIONS FOR MOBILE
+   ======================================== */
+
+@media (max-width: 768px) {
+  /* Reduce blur intensity for better performance */
+  .blur-3xl,
+  .blur-2xl,
+  .blur-xl {
+    filter: blur(20px) !important;
+  }
+
+  /* Disable fixed background effects */
+  .fixed.inset-0.pointer-events-none .blur-3xl,
+  .fixed.inset-0.pointer-events-none .blur-\[150px\],
+  .fixed.inset-0.pointer-events-none .blur-\[180px\] {
+    display: none !important;
+  }
+
+  /* Keep essential backgrounds but simplify */
+  .fixed.inset-0.pointer-events-none {
+    contain: paint;
+  }
+
+  /* Optimize will-change */
+  .will-change-transform,
+  .will-change-\[opacity\] {
+    will-change: auto !important;
+  }
+
+  /* Reduce transform operations */
+  .transform-gpu {
+    transform: translateZ(0);
+  }
+
+  /* Disable scanline effect on mobile */
+  .scanline::before {
+    display: none !important;
+  }
+}
+
+/* ========================================
+   SAFE AREA INSETS (Notch devices)
+   ======================================== */
+
+@supports (padding: max(0px)) {
+  /* Bottom navigation safe area */
+  .fixed.bottom-0,
+  .fixed.bottom-20 {
+    padding-bottom: max(env(safe-area-inset-bottom), 0px);
+  }
+
+  /* Top safe area for notch */
+  nav.sticky.top-0 {
+    padding-top: max(env(safe-area-inset-top), 0px);
+  }
+
+  /* Left/Right safe areas */
+  main {
+    padding-left: max(env(safe-area-inset-left), 0px);
+    padding-right: max(env(safe-area-inset-right), 0px);
+  }
+}
+
+/* ========================================
+   LANDSCAPE MOBILE ADJUSTMENTS
+   ======================================== */
+
+@media (max-height: 500px) and (orientation: landscape) {
+  /* Giảm header height */
+  nav.sticky {
+    padding: 0.25rem 0.5rem !important;
+  }
+
+  nav.sticky .h-16 {
+    height: 3rem !important;
+  }
+
+  /* Giảm spacing tổng thể */
+  .py-8,
+  .pt-8 {
+    padding-top: 0.75rem !important;
+    padding-bottom: 0.75rem !important;
+  }
+
+  /* Ẩn decorative elements */
+  .title-icon-box {
+    display: none !important;
+  }
+
+  /* Compact bottom nav */
+  .fixed.bottom-20 {
+    bottom: 0.5rem !important;
+  }
+}

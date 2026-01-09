@@ -353,3 +353,62 @@
     transparent
   );
 }
+
+/* ==========================================================================
+   MOBILE RESPONSIVE STYLES FOR INTRO PAGE
+   ========================================================================== */
+
+@media (max-width: 768px) {
+  /* Hero section mobile */
+  .text-gold-master {
+    font-size: 2.5rem !important;
+    letter-spacing: 0.05em;
+  }
+
+  /* Giảm kích thước spinning arrays */
+  .absolute.w-\[800px\],
+  .absolute.w-\[600px\],
+  .absolute.w-\[400px\] {
+    transform: scale(0.5) !important;
+  }
+
+  /* Card forbidden compact */
+  .card-forbidden {
+    padding: 1rem !important;
+    margin: 0.5rem !important;
+  }
+
+  /* Font talisman nhỏ hơn */
+  .font-talisman,
+  .text-4xl.md\:text-5xl.font-talisman {
+    font-size: 2rem !important;
+  }
+
+  /* Giảm blur effects */
+  .blur-\[60px\] {
+    filter: blur(30px) !important;
+  }
+
+  /* Ẩn hạt bụi decorative */
+  .animate-\[float_10s_infinite_linear\] {
+    display: none !important;
+  }
+}
+
+@media (max-width: 480px) {
+  /* Tiêu đề nhỏ hơn */
+  .text-gold-master {
+    font-size: 2rem !important;
+  }
+
+  /* Padding nhỏ hơn */
+  .card-forbidden {
+    padding: 0.75rem !important;
+  }
+
+  /* Btn gold compact */
+  .btn-gold {
+    padding: 8px 20px;
+    font-size: 0.75rem;
+  }
+}

@@ -221,7 +221,7 @@ export default function MembersClient({
         </div>
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2 sm:gap-3">
           {Object.values(ROLES).map((role, index) => {
             const count = stats.byRole[role.id] || 0;
             const isSelected = selectedRole === role.id;
@@ -476,12 +476,12 @@ export default function MembersClient({
         )}
 
         {/* Role Legend */}
-        <div className="bg-surface/40 backdrop-blur-md border border-border rounded-xl p-6">
-          <h3 className="font-mono font-bold text-foreground mb-4 flex items-center gap-2">
+        <div className="bg-surface/40 backdrop-blur-md border border-border rounded-xl p-4 sm:p-6">
+          <h3 className="font-mono font-bold text-foreground mb-4 flex items-center gap-2 text-sm sm:text-base">
             <span>📜</span>
             Hệ Thống Cấp Bậc & Đặc Quyền
           </h3>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 sm:gap-4">
             {Object.values(ROLES).map((role) => {
               // Đặc quyền theo từng cấp bậc
               const privileges: Record<string, string[]> = {

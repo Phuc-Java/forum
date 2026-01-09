@@ -159,18 +159,18 @@ export default function ResourcesClient({
           </div>
 
           {/* Header */}
-          <div className="mb-8 animate-fade-in">
-            <div className="flex items-center gap-4 mb-2">
-              <span className="text-4xl animate-float">
+          <div className="mb-6 sm:mb-8 animate-fade-in">
+            <div className="flex items-center gap-3 sm:gap-4 mb-2">
+              <span className="text-3xl sm:text-4xl animate-float">
                 {categoryInfo.icon}
               </span>
               <h1
-                className={`text-3xl font-bold font-mono ${categoryInfo.color}`}
+                className={`text-2xl sm:text-3xl font-bold font-mono ${categoryInfo.color}`}
               >
                 {categoryInfo.name}
               </h1>
             </div>
-            <p className="text-foreground/60 font-mono">
+            <p className="text-foreground/60 font-mono text-sm sm:text-base">
               {categoryInfo.description}
             </p>
             <div className="flex items-center gap-4 mt-4">
@@ -190,7 +190,7 @@ export default function ResourcesClient({
 
           {/* Resources Grid */}
           {loading ? (
-            <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3 sm:gap-4">
               {[...Array(6)].map((_, i) => (
                 <ResourceCardSkeleton key={i} />
               ))}
@@ -213,7 +213,7 @@ export default function ResourcesClient({
               )}
             </div>
           ) : (
-            <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3 sm:gap-4">
               {resources.map((resource, index) => {
                 // Use displayUserRole (server-side) for locked status
                 // This prevents client-side override
