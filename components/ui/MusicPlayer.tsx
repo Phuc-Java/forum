@@ -156,7 +156,7 @@ function MusicPlayer() {
       portal = document.createElement("div");
       portal.id = "music-player-portal";
       portal.style.cssText =
-        "position:fixed;inset:0;z-index:99999;pointer-events:none;";
+        "position:fixed;inset:0;z-index:9998;pointer-events:none;";
       document.body.appendChild(portal);
     }
     setPortalElement(portal);
@@ -328,7 +328,7 @@ function MusicPlayer() {
   const widget = (
     <div
       ref={widgetRef}
-      className="fixed bottom-6 right-6 z-99999 pointer-events-auto"
+      className="fixed bottom-6 right-6 z-9998pointer-events-auto"
       style={{ fontFamily: "var(--font-sans)" }}
     >
       {/* Expanded Panel */}

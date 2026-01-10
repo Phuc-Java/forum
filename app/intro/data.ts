@@ -267,6 +267,48 @@ export const INTRO_DATA = {
       talismanText: "ĐÔNG CHÍ",
       iconPath: "M12 2L2 22h20L12 2zm0 4l6.5 13H5.5L12 6z", // Simple tree shape
     },
+    // --- NEW: Linh Thông Các (Hub: forum / chat / livestream / calls) ---
+    {
+      id: "linh-thong-cac",
+      title: "Linh Thông Các",
+      subTitle: "Hub • Forum · Chat · Livestream",
+      description:
+        "Trung tâm giao tiếp tông môn: forum, phòng chat, livestream và phòng họp video/audio — nơi kết nối đạo hữu.",
+      details:
+        "Linh Thông Các là hub giao tiếp: đăng bài thảo luận, tham gia phòng chat, mở livestream, hoặc tổ chức họp video/audio. Hỗ trợ quyền tạo phòng, mời người, và tương tác thời gian thực.",
+      requirement: "Tự Do",
+      isLocked: false,
+      talismanText: "THÔNG HỘI",
+      iconPath: "M4 6h16v12H4z M8 10h8 M8 14h5",
+    },
+    // --- NEW: Linh Âm Đài (Tu Tiên style) ---
+    {
+      id: "linh-am-dai",
+      title: "Linh Âm Đài",
+      subTitle: "Âm Vũ • Music Shrine (Tu Tiên)",
+      description:
+        "Sân khấu âm cổ, nơi vang vọng linh âm cổ xưa. Ghi chú: phong cách tu tiên trong từng giai điệu.",
+      details:
+        "Nghe thử những khúc ca linh âm, kết hợp hiệu ứng âm thanh huyền ảo giúp tăng cảm hứng tu luyện.",
+      requirement: "Tự Do",
+      isLocked: false,
+      talismanText: "LINH ÂM",
+      iconPath: "M9 19V6l12-2v13",
+    },
+    // --- NEW: Chill with me (Tu Tiên lounge) ---
+    {
+      id: "chill-with-me",
+      title: "Chill with me",
+      subTitle: "Thư Giãn • Chill (Kiểu Tu Tiên)",
+      description:
+        "Góc thư giãn của tông môn, pha trộn nhạc chill và không khí tu tiên — dành cho kẻ mỏi mệt sau khi tu luyện.",
+      details:
+        "Một không gian nhẹ nhàng để ngồi thiền, nghe nhạc và trò chuyện. Ghi chú: phong cách trang trí và nội dung mang hơi hướng tu tiên.",
+      requirement: "Tự Do",
+      isLocked: false,
+      talismanText: "THƯ GIÃN",
+      iconPath: "M3 10h18v4H3v-4z",
+    },
     {
       id: "my-nhan-cac",
       title: "Mỹ Nhân Các",
@@ -364,7 +406,7 @@ export const INTRO_DATA = {
   // --- FOOTER QUOTES ---
   footer: {
     quote: "Vạn pháp giai không, duy hữu Code là chân lý.",
-    copyright: "© 2024 Nguyễn Tuấn Phúc • Xóm Nhà Lá Tông Môn",
+    copyright: "© 2026 Nguyễn Tuấn Phúc • Xóm Nhà Lá Tông Môn",
     contact: "anhdaptroai2007@gmail.com",
   },
 };

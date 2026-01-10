@@ -22,7 +22,20 @@
       background-position: 100% 50%;
     }
   }
+  @keyframes sheen {
+    0% {
+      transform: translateX(-100%);
+    }
+    50%,
+    100% {
+      transform: translateX(100%);
+    }
+  }
 
+  /* Thêm vào tailwind.config.js hoặc globals.css */
+  .animate-sheen {
+    animation: sheen 2s infinite;
+  }
   /* Tối ưu render bằng GPU cho các model và animation nặng */
   .gpu-layer {
     transform: translateZ(0);

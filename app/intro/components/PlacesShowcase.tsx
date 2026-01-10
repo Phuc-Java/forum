@@ -97,6 +97,12 @@ export default function PlacesShowcase() {
         return "/gallery"; // Ví dụ: Trang Ảnh
       case "chung-tu":
         return "/members"; // Trang Chúng Tu
+      case "linh-thong-cac":
+        return "/messenger"; // Hub giao tiếp: messenger (chat / rooms / calls)
+      case "linh-am-dai":
+        return "/music-sanctuary"; // Music hub
+      case "chill-with-me":
+        return "/future"; // Chill page (future)
       case "bao-kho":
         return "/resources"; // Trang Bảo Khố
       case "cao-tri":

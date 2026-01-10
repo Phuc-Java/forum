@@ -525,118 +525,121 @@ export default function Navbar() {
               </span>
             </Link>
 
+            {/* Bí Cảnh - UI lột xác */}
             <div
-              className="relative"
+              className="relative group/parent"
               onMouseEnter={openEvents}
               onMouseLeave={() => closeEventsWithDelay(300)}
             >
               <button
                 onFocus={openEvents}
                 onBlur={() => closeEventsWithDelay(300)}
-                className={`font-mono text-sm transition-all duration-300 relative hover:scale-105 ${
-                  pathname?.startsWith("/events") || pathname === "/giang-sinh"
+                className={`font-mono text-sm transition-all duration-300 relative py-2 flex items-center group ${
+                  pathname?.startsWith("/events") ||
+                  pathname === "/giang-sinh" ||
+                  pathname === "/future"
                     ? "text-primary"
                     : "text-foreground/70 hover:text-primary"
                 }`}
                 aria-haspopup="true"
                 aria-expanded={eventsOpen}
               >
-                <span className="relative inline-flex items-center">
-                  Bí Cảnh
-                  <span
-                    className="ml-2 w-2 h-2 rounded-full bg-primary animate-glow-pulse inline-block"
-                    aria-hidden="true"
-                  ></span>
-                  {pathname === "/giang-sinh" && (
-                    <span className="absolute -bottom-1 left-0 right-0 h-0.5 bg-primary animate-fade-in rounded-full"></span>
-                  )}
+                <span className="relative inline-flex items-center gap-2">
+                  <span className="tracking-widest">BÍ CẢNH</span>
+                  <span className="relative flex h-2 w-2">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-2 w-2 bg-primary shadow-[0_0_8px_rgba(var(--primary),0.8)]"></span>
+                  </span>
                 </span>
               </button>
 
+              {/* Dropdown Menu - Phong cách Glassmorphism */}
               <div
-                className={`absolute left-0 top-full mt-2 w-56 bg-surface border border-border rounded-lg shadow-2xl overflow-hidden z-50 transform transition-all duration-250 ${
+                className={`absolute left-0 top-full mt-3 w-64 bg-slate-900/80 backdrop-blur-xl border border-white/10 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] overflow-hidden z-50 transition-all duration-300 origin-top-left ${
                   eventsOpen
-                    ? "opacity-100 translate-y-0 visible"
-                    : "opacity-0 -translate-y-2 invisible"
+                    ? "opacity-100 scale-100 translate-y-0 visible"
+                    : "opacity-0 scale-95 -translate-y-4 invisible"
                 }`}
                 onMouseEnter={openEvents}
                 onMouseLeave={() => closeEventsWithDelay(300)}
               >
-                <Link
-                  href="/giang-sinh"
-                  className={`flex items-center px-5 py-3 font-mono text-sm text-foreground/80 hover:bg-primary/10 hover:text-primary transition-all duration-150 ${
-                    pathname === "/giang-sinh" ? "text-primary" : ""
-                  }`}
-                >
-                  <span
-                    className="mr-3 w-2 h-2 rounded-full bg-primary animate-glow-pulse inline-block"
-                    aria-hidden="true"
-                  ></span>
-                  <span>Đông Chí Hội</span>
-                  <span className="ml-auto text-gray-400 transition-colors group-hover:text-primary">
-                    →
-                  </span>
-                </Link>
-                <Link
-                  href="/events/my-crush"
-                  className={`flex items-center px-5 py-3 font-mono text-sm text-foreground/80 hover:bg-primary/10 hover:text-primary transition-all duration-150 ${
-                    pathname === "/events/my-crush" ? "text-primary" : ""
-                  }`}
-                >
-                  <span
-                    className="mr-3 w-2 h-2 rounded-full bg-primary animate-glow-pulse inline-block"
-                    aria-hidden="true"
-                  ></span>
-                  <span>My Crush</span>
-                  <span className="ml-auto text-gray-400 transition-colors group-hover:text-primary">
-                    →
-                  </span>
-                </Link>
-                <Link
-                  href="/earn"
-                  className={`flex items-center px-5 py-3 font-mono text-sm text-foreground/80 hover:bg-primary/10 hover:text-primary transition-all duration-150 ${
-                    pathname === "/earn" ? "text-primary" : ""
-                  }`}
-                >
-                  <span
-                    className="mr-3 w-2 h-2 rounded-full bg-primary animate-glow-pulse inline-block"
-                    aria-hidden="true"
-                  ></span>
-                  <span>Thiên Cơ Lâu</span>
-                  <span className="ml-auto text-gray-400 transition-colors group-hover:text-primary">
-                    →
-                  </span>
-                </Link>
-                <Link
-                  href="/gallery"
-                  className={`flex items-center px-5 py-3 font-mono text-sm text-foreground/80 hover:bg-primary/10 hover:text-primary transition-all duration-150 ${
-                    pathname === "/gallery" ? "text-primary" : ""
-                  }`}
-                >
-                  <span
-                    className="mr-3 w-2 h-2 rounded-full bg-primary animate-glow-pulse inline-block"
-                    aria-hidden="true"
-                  ></span>
-                  <span>Mỹ Nhân</span>
-                  <span className="ml-auto text-gray-400 transition-colors group-hover:text-primary">
-                    →
-                  </span>
-                </Link>
-                <Link
-                  href="/phim"
-                  className={`flex items-center px-5 py-3 font-mono text-sm text-foreground/80 hover:bg-primary/10 hover:text-primary transition-all duration-150 ${
-                    pathname === "/phim" ? "text-primary" : ""
-                  }`}
-                >
-                  <span
-                    className="mr-3 w-2 h-2 rounded-full bg-primary animate-glow-pulse inline-block"
-                    aria-hidden="true"
-                  ></span>
-                  <span>Vạn Tượng Đài</span>
-                  <span className="ml-auto text-gray-400 transition-colors group-hover:text-primary">
-                    →
-                  </span>
-                </Link>
+                {/* Thanh quét sáng trên cùng */}
+                <div className="h-[1px] w-full bg-gradient-to-r from-transparent via-primary/50 to-transparent" />
+
+                <div className="p-2 flex flex-col gap-1">
+                  {[
+                    { href: "/giang-sinh", label: "Đông Chí Hội", emoji: "❄️" },
+                    {
+                      href: "/events/my-crush",
+                      label: "My Crush",
+                      emoji: "💕",
+                    },
+                    { href: "/earn", label: "Thiên Cơ Lâu", emoji: "🎋" },
+                    { href: "/gallery", label: "Mỹ Nhân", emoji: "🌸" },
+                    { href: "/phim", label: "Vạn Tượng Đài", emoji: "⛩️" },
+                  ].map((item) => (
+                    <Link
+                      key={item.href}
+                      href={item.href}
+                      className={`group/item flex items-center px-4 py-3 rounded-xl transition-all duration-200 hover:bg-white/5 ${
+                        pathname === item.href
+                          ? "bg-primary/10 text-primary"
+                          : "text-white/60 hover:text-white"
+                      }`}
+                    >
+                      <span className="mr-3 text-base group-hover/item:scale-125 transition-transform">
+                        {item.emoji}
+                      </span>
+                      <span className="font-mono text-[13px] tracking-wider font-medium">
+                        {item.label}
+                      </span>
+                      <span className="ml-auto opacity-0 -translate-x-2 transition-all duration-300 group-hover/item:opacity-100 group-hover/item:translate-x-0 text-primary">
+                        →
+                      </span>
+                    </Link>
+                  ))}
+
+                  {/* Divider */}
+                  <div className="my-1.5 px-4">
+                    <div className="h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
+                  </div>
+
+                  {/* CHILL WITH ME - NỔI BẬT NHẤT */}
+                  <Link
+                    href="/future"
+                    className={`group/chill relative flex items-center px-4 py-4 rounded-xl transition-all duration-500 border ${
+                      pathname === "/future"
+                        ? "bg-cyan-500/20 border-cyan-500/40 text-cyan-300 shadow-[0_0_20px_rgba(6,182,212,0.2)]"
+                        : "bg-cyan-500/5 border-transparent hover:border-cyan-500/20 text-white/80 hover:text-cyan-300"
+                    }`}
+                  >
+                    <div className="flex items-center gap-3 relative z-10 flex-1 min-w-0">
+                      {/* Dot phát sáng */}
+                      <div className="relative flex-shrink-0 flex h-2.5 w-2.5">
+                        <span className="animate-pulse absolute inline-flex h-full w-full rounded-full bg-cyan-400 opacity-75"></span>
+                        <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-cyan-400 shadow-[0_0_10px_#22d3ee]"></span>
+                      </div>
+
+                      {/* Text - Thêm whitespace-nowrap để chống tràn */}
+                      <span className="font-bold font-mono text-[13px] tracking-[0.1em] uppercase drop-shadow-[0_0_8px_rgba(34,211,238,0.5)] whitespace-nowrap overflow-hidden">
+                        Chill with me
+                      </span>
+                    </div>
+
+                    {/* NEW BADGE - Thu nhỏ lại một chút để cân bằng */}
+                    <div className="ml-2 relative z-10 flex-shrink-0">
+                      <span className="relative flex items-center justify-center">
+                        <span className="absolute inset-0 bg-cyan-500/20 rounded-full animate-pulse"></span>
+                        <span className="text-[8px] font-black italic tracking-tighter text-cyan-400 border border-cyan-500/50 rounded-full px-2 py-0.5 bg-black/60 shadow-[0_0_10px_rgba(34,211,238,0.3)] whitespace-nowrap">
+                          NEW_LOG
+                        </span>
+                      </span>
+                    </div>
+
+                    {/* Hiệu ứng tia sáng quét ngang */}
+                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-cyan-400/10 to-transparent -translate-x-full group-hover/chill:animate-[sheen_2s_infinite] transition-transform" />
+                  </Link>
+                </div>
               </div>
             </div>
           </div>

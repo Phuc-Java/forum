@@ -54,10 +54,10 @@ export function useAudioEngine({
           .webkitAudioContext;
       audioContextRef.current = new AudioCtx();
 
-      // Tạo Analyser Node - cân bằng giữa chất lượng và performance
+      // Tạo Analyser Node với độ phân giải cao (server mạnh - client có thể xử lý)
       const analyser = audioContextRef.current.createAnalyser();
-      analyser.fftSize = 512; // Giảm để tối ưu performance (256 bins)
-      analyser.smoothingTimeConstant = 0.85; // Tăng smoothing để giảm jitter
+      analyser.fftSize = 4096; // Tăng lên cho độ chính xác cao nhất
+      analyser.smoothingTimeConstant = 0.8; // Làm mượt transitions
       analyserRef.current = analyser;
 
       // Buffer cho dữ liệu tần số
@@ -109,14 +109,14 @@ export function useAudioEngine({
     const data = dataArrayRef.current;
     const bufferLength = data.length;
 
-    // Chia dải tần số với FFT 512 -> 256 bins
-    // Bass: ~20-250Hz (bins 0-10)
-    // Mid: ~250-4000Hz (bins 10-80)
-    // Treble: ~4000-20000Hz (bins 80+)
+    // Chia dải tần số chi tiết hơn (với FFT 4096 -> 2048 bins)
+    // Bass: 20-250Hz (bins 0-60)
+    // Mid: 250-4000Hz (bins 60-480)
+    // Treble: 4000-20000Hz (bins 480+)
 
-    const bassRange = data.slice(0, 12);
-    const midRange = data.slice(12, 80);
-    const trebleRange = data.slice(80, 180);
+    const bassRange = data.slice(0, 80);
+    const midRange = data.slice(80, 500);
+    const trebleRange = data.slice(500, 1024);
 
     const getAverage = (arr: Uint8Array<ArrayBuffer>) => {
       let sum = 0;
