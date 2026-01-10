@@ -3,7 +3,7 @@ import localFont from "next/font/local";
 import "./globals.css";
 import Navbar from "@/components/layout/Navbar";
 import ClientMusicPlayer from "@/components/ui/ClientMusicPlayer";
-
+import Script from "next/script";
 // Be Vietnam Pro - Sans-serif tiếng Việt cho body text
 const beVietnamPro = localFont({
   src: [
@@ -100,6 +100,11 @@ export default function RootLayout({
         <Navbar />
         {children}
         <ClientMusicPlayer />
+        <Script
+          src="https://analytics.xomnhala.app/script.js"
+          data-website-id="0bf946b1-1142-47ef-a07a-26f830c7a774"
+          strategy="lazyOnload"
+        />
       </body>
     </html>
   );
