@@ -68,6 +68,17 @@ const nextConfig: NextConfig = {
           },
         ],
       },
+      // Allow camera/microphone usage for the embedded external page
+      {
+        source: "/van-kiem-quy-tong/:path*",
+        headers: [
+          {
+            key: "Permissions-Policy",
+            value:
+              'camera=(self "https://phuc-tien-nhan.vercel.app"), microphone=(self "https://phuc-tien-nhan.vercel.app")',
+          },
+        ],
+      },
       {
         source: "/3D/:path*",
         headers: [

@@ -555,7 +555,7 @@ export default function Navbar() {
 
               {/* Dropdown Menu - Phong cách Glassmorphism */}
               <div
-                className={`absolute left-0 top-full mt-3 w-64 bg-slate-900/80 backdrop-blur-xl border border-white/10 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] overflow-hidden z-50 transition-all duration-300 origin-top-left ${
+                className={`absolute left-0 top-full mt-3 w-72 bg-slate-900/80 backdrop-blur-xl border border-white/10 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] overflow-hidden z-50 transition-all duration-300 origin-top-left ${
                   eventsOpen
                     ? "opacity-100 scale-100 translate-y-0 visible"
                     : "opacity-0 scale-95 -translate-y-4 invisible"
@@ -638,6 +638,31 @@ export default function Navbar() {
 
                     {/* Hiệu ứng tia sáng quét ngang */}
                     <div className="absolute inset-0 bg-gradient-to-r from-transparent via-cyan-400/10 to-transparent -translate-x-full group-hover/chill:animate-[sheen_2s_infinite] transition-transform" />
+                  </Link>
+
+                  {/* Vạn Kiếm Quy Tòng - Highlighted red badge under Chill with me */}
+                  <Link
+                    href="/van-kiem-quy-tong"
+                    className={`group/special relative flex items-center px-4 py-4 rounded-xl transition-all duration-500 border ${
+                      pathname?.startsWith("/van-kiem-quy-tong")
+                        ? "bg-red-600/20 border-red-500/30 text-red-300 shadow-[0_0_20px_rgba(220,38,38,0.12)]"
+                        : "bg-red-600/5 hover:bg-red-600/10 text-red-300/80 hover:text-red-200"
+                    }`}
+                  >
+                    <div className="flex items-center gap-3 relative z-10 flex-1 min-w-0">
+                      <span className="text-base" aria-hidden>
+                        🗡️
+                      </span>
+                      <span className="font-mono text-[13px] tracking-wider font-medium whitespace-nowrap overflow-hidden">
+                        Vạn Kiếm Quy Tòng
+                      </span>
+                    </div>
+
+                    <div className="ml-2 relative z-10 flex-shrink-0">
+                      <span className="text-[9px] px-2 py-0.5 bg-red-500/25 text-red-200 rounded-full font-bold border border-red-400/40 shadow-sm shadow-red-500/10 tracking-wide whitespace-nowrap">
+                        siêu phẩm
+                      </span>
+                    </div>
                   </Link>
                 </div>
               </div>
