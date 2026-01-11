@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Đại Cảnh Kiếm Trận - GPU Turbo Mode</title>
+
+    <script>
+      (function () {
+        console.log(
+          "%c 🚀 GPU TURBO MODE: ACTIVATED ",
+          "background: #ff0000; color: #fff; font-size: 16px; font-weight: bold; padding: 5px;"
+        );
+
+        // --- CHIẾN THUẬT 1: GIẢ LẬP MÔI TRƯỜNG AI (HACK GLOBAL VARS) ---
+        // Khai báo trước các cờ hiệu năng để lừa thư viện AI (TensorFlow/MediaPipe) dùng WebGL ngay lập tức
+        window.tf = window.tf || {};
+        window.tf.ENV = window.tf.ENV || {};
+        window.tf.ENV.flags = window.tf.ENV.flags || {};
+
+        // Các cờ phổ biến để ép tính toán trên GPU
+        window.WEBGL_PACK = true;
+        window.WEBGL_FORCE_FLOAT_TEXTURE = true;
+        window.tf.ENV.flags.WEBGL_PACK = true;
+        window.tf.ENV.flags.WEBGL_FORCE_FLOAT_TEXTURE = true;
+        window.tf.ENV.flags.WEBGL_VERSION = 2; // Ép dùng WebGL 2.0
+
+        // --- CHIẾN THUẬT 2: GIẢM GÁNH NẶNG CPU (DPR HACK) ---
+        // Ép màn hình về tỉ lệ 1.0 (Dù là màn 4K cũng chỉ render như HD)
+        // Đây là bước quan trọng nhất để cứu CPU khỏi quá tải
+        Object.defineProperty(window, "devicePixelRatio", {
+          get: function () {
+            return 1;
+          },
+        });
+
+        // --- CHIẾN THUẬT 3: CƯỚP QUYỀN WEBGL (CONTEXT HIJACK) ---
+        const originalGetContext = HTMLCanvasElement.prototype.getContext;
+        HTMLCanvasElement.prototype.getContext = function (type, attributes) {
+          // Chỉ can thiệp vào các yêu cầu vẽ 3D
+          if (
+            type === "webgl" ||
+            type === "experimental-webgl" ||
+            type === "webgl2"
+          ) {
+            attributes = attributes || {};
+
+            // Ép buộc dùng GPU rời
+            attributes.powerPreference = "high-performance";
+
+            // Tắt đồng bộ với CPU -> Giảm độ trễ, GPU chạy độc lập (Fix Input Lag)
+            attributes.desynchronized = true;
+
+            // Tắt khử răng cưa -> Giảm việc tính toán đường viền
+            attributes.antialias = false;
+
+            // Không giữ bộ nhớ đệm -> Giải phóng RAM
+            attributes.preserveDrawingBuffer = false;
+
+            // Bỏ qua cảnh báo hiệu năng của trình duyệt
+            attributes.failIfMajorPerformanceCaveat = false;
+
+            console.log(
+              "⚡ WebGL Context đã bị ép sang chế độ High-Performance"
+            );
+          }
+          return originalGetContext.call(this, type, attributes);
+        };
+
+        // --- CHIẾN THUẬT 4: GIẢM TẢI ĐẦU VÀO (WEBCAM HACK) ---
+        // Chặn luồng camera để giảm độ phân giải xuống mức tối thiểu
+        if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+          const originalGetUserMedia = navigator.mediaDevices.getUserMedia.bind(
+            navigator.mediaDevices
+          );
+          navigator.mediaDevices.getUserMedia = function (constraints) {
+            console.log("📷 Đang tối ưu luồng Camera để cứu CPU...");
+
+            // Cấu hình siêu nhẹ cho Webcam (640x480)
+            const gpuFriendlyConstraints = {
+              width: { ideal: 640, max: 640 },
+              height: { ideal: 480, max: 480 },
+              frameRate: { ideal: 60, min: 30 }, // Ép FPS cao
+            };
+
+            // Ghi đè cấu hình cũ một cách an toàn
+            if (constraints && constraints.video) {
+              if (typeof constraints.video === "boolean") {
+                constraints.video = gpuFriendlyConstraints;
+              } else {
+                Object.assign(constraints.video, gpuFriendlyConstraints);
+              }
+            } else {
+              constraints = { video: gpuFriendlyConstraints };
+            }
+
+            return originalGetUserMedia(constraints);
+          };
+        }
+      })();
+    </script>
+    <script type="module" crossorigin src="./main.js"></script>
+    <link rel="stylesheet" crossorigin href="../style.css" />
+
+    <style>
+      /* Kích hoạt tăng tốc phần cứng qua CSS */
+      #root,
+      canvas {
+        transform: translateZ(0);
+        will-change: transform, opacity;
+        backface-visibility: hidden;
+        perspective: 1000px; /* Thêm chiều sâu cho không gian 3D */
+      }
+    </style>
+  </head>
+  <body>
+    <div id="root"></div>
+
+    <style>
+      @keyframes upma-fade-in {
+        from {
+          opacity: 0;
+          transform: translateY(10px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+      @keyframes upma-modal-in {
+        from {
+          opacity: 0;
+          transform: scale(0.95) translateY(10px);
+        }
+        to {
+          opacity: 1;
+          transform: scale(1) translateY(0);
+        }
+      }
+      [data-shangma-branding],
+      [data-shangma-branding] * {
+        user-select: none;
+        -webkit-user-drag: none;
+        -webkit-touch-callout: none;
+      }
+      [data-shangma-branding] {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        touch-action: none; /* 阻止移动端触摸滚动 */
+      }
+      /* 左侧吸附时，翻转顺序 (Main Link 在前，举报按钮在后) */
+      [data-shangma-branding][data-position="left"] {
+        flex-direction: row-reverse;
+      }
+      [data-shangma-branding] a {
+        transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        text-decoration: none;
+      }
+      [data-shangma-branding] button {
+        transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        cursor: pointer;
+      }
+      [data-shangma-branding] a[data-shangma-branding-link="home"]:hover {
+        background: linear-gradient(
+          135deg,
+          rgba(55, 65, 81, 0.95),
+          rgba(75, 85, 99, 0.95)
+        ) !important;
+        border-color: rgba(255, 255, 255, 0.2) !important;
+        transform: scale(1.02);
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.25);
+      }
+      [data-shangma-branding] a[data-shangma-branding-link="home"]:hover svg {
+        transform: rotate(12deg);
+      }
+      [data-shangma-branding] a[data-shangma-branding-link="home"] svg {
+        transition: transform 0.25s ease;
+      }
+      [data-shangma-branding] button[data-shangma-report-btn] {
+        opacity: 0;
+        transform: translateX(-10px);
+        pointer-events: none;
+      }
+      [data-shangma-branding]:hover button[data-shangma-report-btn] {
+        opacity: 1;
+        transform: translateX(0);
+        pointer-events: auto;
+      }
+      [data-shangma-branding] button[data-shangma-report-btn]:hover {
+        background: rgba(239, 68, 68, 0.9) !important;
+        border-color: rgba(248, 113, 113, 0.5) !important;
+      }
+      [data-shangma-report-modal] {
+        display: none;
+        position: fixed;
+        inset: 0;
+        z-index: 2147483647;
+        background: rgba(0, 0, 0, 0.5);
+        backdrop-filter: blur(4px);
+        align-items: center;
+        justify-content: center;
+        font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
+          Helvetica, Arial, sans-serif;
+      }
+      [data-shangma-report-modal].open {
+        display: flex;
+      }
+      [data-shangma-report-modal] .modal-content {
+        background: #1f2937;
+        border-radius: 16px;
+        padding: 24px;
+        width: 320px;
+        max-width: 90vw;
+        box-shadow: 0 25px 50px rgba(0, 0, 0, 0.4);
+        animation: upma-modal-in 0.2s ease-out;
+      }
+      [data-shangma-report-modal] h3 {
+        margin: 0 0 16px;
+        font-size: 16px;
+        font-weight: 600;
+        color: #fff;
+      }
+      [data-shangma-report-modal] label {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 10px 12px;
+        margin: 6px 0;
+        border-radius: 10px;
+        background: rgba(255, 255, 255, 0.05);
+        color: #d1d5db;
+        font-size: 14px;
+        cursor: pointer;
+        transition: background 0.15s;
+      }
+      [data-shangma-report-modal] label:hover {
+        background: rgba(255, 255, 255, 0.1);
+      }
+      [data-shangma-report-modal] input[type="checkbox"] {
+        width: 16px;
+        height: 16px;
+        accent-color: #ef4444;
+      }
+      [data-shangma-report-modal] .btn-row {
+        display: flex;
+        gap: 10px;
+        margin-top: 20px;
+      }
+      [data-shangma-report-modal] button {
+        flex: 1;
+        padding: 10px;
+        border-radius: 10px;
+        border: none;
+        font-size: 14px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.15s;
+      }
+      [data-shangma-report-modal] .btn-cancel {
+        background: rgba(255, 255, 255, 0.1);
+        color: #9ca3af;
+      }
+      [data-shangma-report-modal] .btn-cancel:hover {
+        background: rgba(255, 255, 255, 0.15);
+      }
+      [data-shangma-report-modal] .btn-submit {
+        background: #ef4444;
+        color: #fff;
+      }
+      [data-shangma-report-modal] .btn-submit:hover {
+        background: #dc2626;
+      }
+      [data-shangma-report-modal] .btn-submit:disabled {
+        background: #4b5563;
+        cursor: not-allowed;
+      }
+      [data-shangma-report-modal] .success-msg {
+        text-align: center;
+        color: #10b981;
+        font-size: 14px;
+        padding: 20px 0;
+      }
+      [data-shangma-branding].free {
+        position: fixed;
+        right: 16px;
+        bottom: 16px;
+        z-index: 2147483647;
+        font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
+          Helvetica, Arial, sans-serif;
+        animation: upma-fade-in 0.3s ease-out;
+      }
+      @media (max-width: 640px) {
+        [data-shangma-branding].free {
+          right: 12px;
+          bottom: max(12px, env(safe-area-inset-bottom));
+          transform: scale(0.85);
+          transform-origin: bottom right;
+        }
+        [data-shangma-branding] button[data-shangma-report-btn] {
+          opacity: 1 !important;
+          transform: translateX(0) !important;
+          pointer-events: auto !important;
+        }
+      }
+    </style>
+    <div data-shangma-branding="free" class="free">
+      <button
+        data-shangma-report-btn
+        style="
+          display: inline-flex;
+          align-items: center;
+          gap: 4px;
+          padding: 6px 10px;
+          border-radius: 10px;
+          background: rgba(30, 32, 40, 0.85);
+          border: 1px solid rgba(255, 255, 255, 0.1);
+          color: rgba(255, 255, 255, 0.7);
+          font-size: 11px;
+          backdrop-filter: blur(12px);
+        "
+      >
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
+          <path
+            d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1zM4 22v-7"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          />
+        </svg>
+        <span>Báo cáo</span>
+      </button>
+    </div>
+    <div data-shangma-report-modal>
+      <div class="modal-content">
+        <h3>🚩 Báo cáo nội dung vi phạm</h3>
+        <div data-shangma-report-form>
+          <label
+            ><input type="checkbox" name="reason" value="illegal" />Nội dung vi
+            phạm pháp luật</label
+          >
+          <label
+            ><input type="checkbox" name="reason" value="porn" />Khiêu dâm / Thô
+            tục</label
+          >
+          <label
+            ><input type="checkbox" name="reason" value="fraud" />Lừa đảo /
+            Phishing</label
+          >
+          <label
+            ><input type="checkbox" name="reason" value="malware" />Phần mềm độc
+            hại / Virus</label
+          >
+          <label
+            ><input type="checkbox" name="reason" value="other" />Vi phạm
+            khác</label
+          >
+          <div class="btn-row">
+            <button type="button" class="btn-cancel" data-shangma-cancel>
+              Hủy
+            </button>
+            <button
+              type="button"
+              class="btn-submit"
+              data-shangma-submit
+              disabled
+            >
+              Gửi báo cáo
+            </button>
+          </div>
+        </div>
+        <div class="success-msg" style="display: none">
+          ✓ Báo cáo đã được gửi, cảm ơn phản hồi của bạn
+        </div>
+      </div>
+    </div>
+    <script>
+      (function () {
+        var modal = document.querySelector("[data-shangma-report-modal]");
+        var form = document.querySelector("[data-shangma-report-form]");
+        var successMsg = document.querySelector(
+          "[data-shangma-report-modal] .success-msg"
+        );
+        var btn = document.querySelector("[data-shangma-report-btn]");
+        var cancelBtn = document.querySelector("[data-shangma-cancel]");
+        var submitBtn = document.querySelector("[data-shangma-submit]");
+        var checkboxes = document.querySelectorAll(
+          '[data-shangma-report-form] input[type="checkbox"]'
+        );
+
+        btn.onclick = function (e) {
+          e.preventDefault();
+          modal.classList.add("open");
+          form.style.display = "";
+          successMsg.style.display = "none";
+          checkboxes.forEach(function (c) {
+            c.checked = false;
+          });
+          submitBtn.disabled = true;
+        };
+
+        cancelBtn.onclick = function () {
+          modal.classList.remove("open");
+        };
+
+        modal.onclick = function (e) {
+          if (e.target === modal) modal.classList.remove("open");
+        };
+
+        checkboxes.forEach(function (c) {
+          c.onchange = function () {
+            var checked = Array.from(checkboxes).some(function (x) {
+              return x.checked;
+            });
+            submitBtn.disabled = !checked;
+          };
+        });
+
+        submitBtn.onclick = function () {
+          var reasons = Array.from(checkboxes)
+            .filter(function (c) {
+              return c.checked;
+            })
+            .map(function (c) {
+              return c.value;
+            });
+          var data = { url: location.href, reasons: reasons };
+          fetch("https://api.upma.cn/report", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(data),
+          }).catch(function () {});
+          form.style.display = "none";
+          successMsg.style.display = "";
+          setTimeout(function () {
+            modal.classList.remove("open");
+          }, 1500);
+        };
+      })();
+    </script>
+  </body>
+</html>

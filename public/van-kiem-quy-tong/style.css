@@ -1,0 +1,32 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  /* Chặn người dùng bôi đen chữ/hình -> Giảm lag khi di chuột nhanh */
+  user-select: none;
+  -webkit-user-select: none;
+  /* Chặn các thao tác chạm/kéo mặc định của trình duyệt */
+  touch-action: none;
+}
+
+body {
+  /* Khóa cứng kích thước, chặn thanh cuộn tuyệt đối */
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  position: fixed;
+  background: radial-gradient(ellipse at center, #0a1628, #000);
+  /* Dùng font hệ thống cho nhanh, bỏ font PingFang (Tàu) để đỡ tốn công load */
+  font-family: system-ui, -apple-system, sans-serif;
+}
+
+#root {
+  /* QUAN TRỌNG: Đổi vw/vh thành % để khớp với body, tránh thanh cuộn trên Windows */
+  width: 100%;
+  height: 100%;
+  /* Không thêm transform/will-change ở đây nữa để tránh xung đột với HTML */
+}
+
+canvas {
+  display: block; /* Xóa khoảng trắng thừa dưới chân thẻ canvas */
+}
